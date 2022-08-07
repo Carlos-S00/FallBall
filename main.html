@@ -1,0 +1,32 @@
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.js"></script>
+    <script src="sketch.js"></script>
+
+<script>
+    (function() {
+        // Register an event listener to call the resizeCanvas() function
+        // each time the window is resized.
+        window.addEventListener('resize', doResize, false);
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        function doResize() {
+            resolution = {x: window.innerWidth, y: window.innerHeight};
+            resizeCanvas(window.innerWidth, window.innerHeight);
+            brickCanvas.resizeCanvas(window.innerWidth, window.innerHeight);
+            rainbowCanvas.resizeCanvas(window.innerWidth, window.innerHeight);
+
+            game.displayGameBackground();
+        }
+
+        // Runs each time the DOM window resize event fires.
+        // Sets the resolution variable as well.
+    })();
+
+</script>
+</head>
+<body>
+<main>
+</main>
+</body>
+</html>
