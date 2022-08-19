@@ -6,6 +6,7 @@ let frame = 0;
 let colorNum = 0;
 let colors = {r: 0 , g: 0, b: 0};
 let g;
+let preResolution = {x: resolution.x, y: resolution.y};
 
 let backgroundImage;
 let backgroundImageCopy;
@@ -41,7 +42,7 @@ class gameSystem{
   
     recalcScreen(){
       this.widthOfGameScreen = aspectRatio * resolution.y;
-      this.heightOfGameScreen = resolution.y; 
+      this.heightOfGameScreen = resolution.y;
   
       this.position = {
         startX: (resolution.x/2) - (this.widthOfGameScreen/2), 
@@ -54,6 +55,20 @@ class gameSystem{
     displayGameScreen(){
       this.recalcScreen()
       image(gameScreenImage, this.position.startX, this.position.startY, this.widthOfGameScreen, this.heightOfGameScreen)
+      if(preResolution.x != resolution.x || preResolution.y != resolution.y){
+        console.log("ReCalculating")
+        let colorVal = 0;
+        let RBGColors = {r: 0, g: 0, b: 0};
+        for(lineHeight = 1; lineHeight <= resolution.y; lineHeight += 2){
+          RBGColors = colorFunc(colorVal);
+          rainbowCanvas.stroke(RBGColors.r, RBGColors.g, RBGColors.b);
+          rainbowCanvas.line(0, lineHeight, resolution.x, lineHeight);
+          colorVal += 5;
+        }
+        //preResolution = {x: resolution.x, y: resolution.y};
+        //This if conditions checks to see if screen has been modifyed. If so, resets the lines from rainbowCanvas. Otherwise, skip.
+        //PROBLEM: I should be able to set preResolution the the current resolution however, this is causing a white screen when screren is modyfyed..
+      }
     }
   
     resetImage(images){
@@ -103,27 +118,6 @@ class gameSystem{
     perToPx(percent){
       return percent * this.widthOfGameScreen;
     }
-    
-    LineColor(colorNum){
-      colorNum = colorNum % 1529;
-      if(colorNum <= 255){ //0 - 255
-          stroke(255, colorNum, 0);
-        }else if(colorNum <= 510){ // 256 - 510
-          stroke(510 - colorNum, 255, 0);
-        }else if (colorNum <= 765){ // 511 - 765
-          stroke(0, 255, colorNum - 510);
-        }else if(colorNum <= 1020){ //766 - 1020
-          stroke(0, 1020 - colorNum, 255);
-        }else if(colorNum <= 1275){ // 1021 - 1275
-          stroke(colorNum - 1020, 0, 255);
-        }else if(colorNum <= 1529){ //1276 - 1529
-          stroke(255, 0, 1529 - colorNum);
-        }else{
-          stroke(255, colorNum, 0);
-        }
-        colorNum += 5;
-        return colorNum;
-      }
     
       //floors[floorIndex].displayFloor(game.c(floors[floorIndex].StartPosition), game.c(floors[floorIndex].EndPosition));
       //walls[wallIndex].displayWall(game.c(walls[wallIndex].StartPosition), game.c(walls[wallIndex].EndPosition));
@@ -228,10 +222,9 @@ class shortHand{
 }
 
 class floor{
-    constructor(startPosition, length, colorNum, moveVars, moveFunc){
+    constructor(startPosition, length, moveVars, moveFunc){
       this.startPosition = {x: startPosition.x, y: startPosition.y};
       this.length = length;
-      this.colorNum = colorNum;
       this.ball = false;
       this.moveFunc = moveFunc;
       if(moveVars){
@@ -239,14 +232,36 @@ class floor{
       }else{
         this.moveVars = false;
       }
-    }
-    // testing git
-    
+    }    
 }
 
+function colorFunc(colorNum){
+  colorNum = colorNum % 1529;
+  if(colorNum <= 255){ //0 - 255
+      stroke(255, colorNum, 0);
+      return colors = {r: 255, g: colorNum, b: 0};
+    }else if(colorNum <= 510){ // 256 - 510
+      stroke(510 - colorNum, 255, 0);
+      return colors = {r: 510 - colorNum, g: 255, b: 0};
+    }else if (colorNum <= 765){ // 511 - 765
+      stroke(0, 255, colorNum - 510);
+      return colors = {r: 0, g: 255, b: colorNum - 510};
+    }else if(colorNum <= 1020){ //766 - 1020
+      stroke(0, 1020 - colorNum, 255);
+      return colors = {r: 0, g: 1020 - colorNum, b: 255};
+    }else if(colorNum <= 1275){ // 1021 - 1275
+      stroke(colorNum - 1020, 0, 255);
+      return colors = {r: colorNum - 1020, g: 0, b: 255};
+    }else if(colorNum <= 1529){ //1276 - 1529
+      stroke(255, 0, 1529 - colorNum);
+      return colors = {r: 255, g: 0, b: 1529 - colorNum};
+    }else{
+      stroke(255, colorNum, 0);
+      return colors = {r: 255, g: colorNum, b: 0};
+    }
+}
 
 function preload(){
-  
     ballImage = loadImage('./images/toyStoryBall1.png');
     backgroundImage = loadImage('./images/black-brickwall-better.jpg');
     backgroundImageCopy = loadImage('./images/black-brickwall-better.jpg');
@@ -267,6 +282,15 @@ function setup(){
     brickCanvas.style("z-index", "3");
     rainbowCanvas.style("position", "absolute");
     brickCanvas.style("position", "absolute");
+
+    let colorVal = 0;
+    let RBGColors = {r: 0, g: 0, b: 0};
+    for(lineHeight = 1; lineHeight <= resolution.y; lineHeight += 2){
+      RBGColors = colorFunc(colorVal);
+      rainbowCanvas.stroke(RBGColors.r, RBGColors.g, RBGColors.b);
+      rainbowCanvas.line(0, lineHeight, resolution.x, lineHeight);
+      colorVal += 5;
+    }
 
     angleMode(DEGREES);
     textAlign(CENTER);
