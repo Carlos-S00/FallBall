@@ -68,6 +68,7 @@ class gameSystem{
         //preResolution = {x: resolution.x, y: resolution.y};
         //This if conditions checks to see if screen has been modifyed. If so, resets the lines from rainbowCanvas. Otherwise, skip.
         //PROBLEM: I should be able to set preResolution the the current resolution however, this is causing a white screen when screren is modyfyed..
+        // it currently runs everytime thus, not saving time and maybe nither space
       }
     }
   
@@ -76,36 +77,36 @@ class gameSystem{
     }
     
     displayGameBackground(){
-        let currentWidth = 140;
-        let currentHeight = 0;
+      let currentWidth = 140;
+      let currentHeight = 0;
 
-        brickCanvas.clear();
-        while(currentHeight <= this.position.endY){
-            
-            brickCanvas.image(backgroundImage, this.position.startX - currentWidth, currentHeight, 140, 100, 58, 78, 140, 137);
-            currentWidth += 140;
+      brickCanvas.clear();
+      while(currentHeight <= this.position.endY){
+          
+        brickCanvas.image(backgroundImage, this.position.startX - currentWidth, currentHeight, 140, 100, 58, 78, 140, 137);
+        currentWidth += 140;
 
-            while(this.position.startX - currentWidth > -140){
-                brickCanvas.image(backgroundImage, this.position.startX - currentWidth, currentHeight, 140, 100, 58, 78, 140, 137);
-                currentWidth += 140;
-            }
-            currentWidth = 140;
-            currentHeight += 100 - 5;
+        while(this.position.startX - currentWidth > -140){
+          brickCanvas.image(backgroundImage, this.position.startX - currentWidth, currentHeight, 140, 100, 58, 78, 140, 137);
+          currentWidth += 140;
         }
+        currentWidth = 140;
+        currentHeight += 100 - 5;
+      }
 
-        currentHeight = 0;
+      currentHeight = 0;
 
+      currentWidth = this.position.endX;
+      while(currentHeight <= this.position.endY){
+        brickCanvas.image(backgroundImage, currentWidth, currentHeight, 140, 100, 58, 78, 140, 137);
+        
+        while(currentWidth < resolution.x ){
+          brickCanvas.image(backgroundImage, currentWidth + 140, currentHeight, 140, 100, 58, 78, 140, 137);
+          currentWidth += 140;
+        }
         currentWidth = this.position.endX;
-        while(currentHeight <= this.position.endY){
-            brickCanvas.image(backgroundImage, currentWidth, currentHeight, 140, 100, 58, 78, 140, 137);
-            
-            while(currentWidth < resolution.x ){
-                brickCanvas.image(backgroundImage, currentWidth + 140, currentHeight, 140, 100, 58, 78, 140, 137);
-                currentWidth += 140;
-            }
-            currentWidth = this.position.endX;
-            currentHeight += 100 - 5;
-        }
+        currentHeight += 100 - 5;
+      }
     }
   
     coordToScreen(position){
@@ -118,10 +119,6 @@ class gameSystem{
     perToPx(percent){
       return percent * this.widthOfGameScreen;
     }
-    
-      //floors[floorIndex].displayFloor(game.c(floors[floorIndex].StartPosition), game.c(floors[floorIndex].EndPosition));
-      //walls[wallIndex].displayWall(game.c(walls[wallIndex].StartPosition), game.c(walls[wallIndex].EndPosition));
-      //gameBall.displayBall(game.c(gameBall.BallPosition), (gameBallRatio * game.widthOfGameScreen));
   
     displayWall(wall){
       wall.colorNum = this.LineColor(wall.colorNum);
@@ -132,12 +129,13 @@ class gameSystem{
     }
     
     displayFloor(floor){
-      floor.colorNum = this.LineColor(floor.colorNum);
       let startPosition = g.c(floor.startPosition);
-      let endOfLine = {x: floor.startPosition.x + floor.length, y: floor.startPosition.y};
-      let endPosition = g.c(endOfLine);
-  
-      line(startPosition.x, startPosition.y, endPosition.x, endPosition.y);
+      let endPosition = {x: floor.startPosition.x + floor.length, y: startPosition.y};
+      endPosition = g.c(endPosition);
+
+      erase();
+      line(startPosition.x, startPosition.y, endPosition.x, startPosition.y);
+      noErase();
     }
   
     displayBall(ball){
@@ -161,53 +159,6 @@ class gameSystem{
         resetMatrix();
       }
     }
-  
-    createFloorsNWalls(placeFloors = true, placeWalls = true){
-  
-      let floorindex = 0;
-      let wallIndex = 0;
-  
-      for(let floorNum = 0; floorNum < numOfFloors; floorNum++){
-        let colorNum = {one: (floorindex + 1) * 20, two: (floorindex + 2) * 20, three: (floorindex + 3) * 20};
-        let begHole = random(1 - holesize);
-        let begWall = begHole;
-    
-        while(
-          (begWall >= begHole && begWall <= begHole + holesize) || 
-          (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || 
-          begWall + holesize > 1){
-          begWall = random()
-        }
-    
-        let floorStartPosition = {x: 0, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
-        let floorEndPosition = {x: begHole, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
-        
-        if(placeFloors){
-          floors[floorindex++] = new floor(floorStartPosition, floorEndPosition, colorNum.one);
-          
-          floorStartPosition = {x: begHole + holesize, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
-          floorEndPosition = {x: 1, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
-          floors[floorindex++] = new floor(floorStartPosition, floorEndPosition, colorNum.two);
-        }
-  
-        let wallStartPosition = {x: begWall, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
-        let wallEndPosition = {x: begWall, y: (((1 / aspectRatio) / numOfFloors) * (floorNum + 1)) - wallHeight};
-  
-        if(placeWalls){
-          walls[wallIndex++] = new wall(wallStartPosition, wallEndPosition, colorNum.three);
-  
-          floorStartPosition = {x: begWall, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1) - wallHeight};
-          floorEndPosition = {x: begWall + wallwidth, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1) - wallHeight};
-  
-          floors[floorindex++] = new floor(floorStartPosition, floorEndPosition, colorNum.three);
-  
-          wallStartPosition = {x: begWall + wallwidth, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
-          wallEndPosition = {x: begWall + wallwidth, y: (((1 / aspectRatio) / numOfFloors) * (floorNum + 1)) - wallHeight};
-  
-          walls[wallIndex++] = new wall(wallStartPosition, wallEndPosition, colorNum.three);
-        }
-      }
-    }
 }
 
 class shortHand{
@@ -222,17 +173,25 @@ class shortHand{
 }
 
 class floor{
-    constructor(startPosition, length, moveVars, moveFunc){
-      this.startPosition = {x: startPosition.x, y: startPosition.y};
-      this.length = length;
-      this.ball = false;
-      this.moveFunc = moveFunc;
-      if(moveVars){
-        this.moveVars = moveVars;
-      }else{
-        this.moveVars = false;
-      }
-    }    
+  constructor(startPosition, length, moveVars, moveFunc){
+    this.startPosition = {x: startPosition.x, y: startPosition.y};
+    this.length = length;
+    this.ball = false;
+    this.moveFunc = moveFunc;
+    if(moveVars){
+      this.moveVars = moveVars;
+    }else{
+      this.moveVars = false;
+    }
+  }
+    
+  moveVertically(){
+    this.startPosition.y += this.floorVelocity.y;
+  }
+
+  doMovement(){
+    this.moveFunc();
+  }
 }
 
 function colorFunc(colorNum){
@@ -300,6 +259,13 @@ function setup(){
     g = new shortHand(game);
 
     game.displayGameBackground();
+
+    startPosition = {x: 0, y: game.heightOfGameScreen / game.widthOfGameScreen};
+    floorVelocity = {x: 0, y: -.001};
+    moveVars = {floorVelocity: floorVelocity};
+    floors.push(new floor(startPosition, .2, moveVars, function(){
+      this.startPosition.y += this.moveVars.floorVelocity.y;
+    }));
 }
 
 draw = function(){
@@ -310,6 +276,9 @@ draw = function(){
     background(colors.r, colors.g, colors.b);
 
     game.displayGameScreen();
+
+    floors[0].doMovement();
+    game.displayFloor(floors[0])
 
     frame++;
 }
