@@ -81,34 +81,34 @@ class gameSystem{
     }
     
     displayGameBackground(){
-      let currentWidth = 140;
+      let currentWidth = 139;
       let currentHeight = 0;
 
       brickCanvas.clear();
       while(currentHeight <= this.position.endY){
           
         brickCanvas.image(backgroundImage, this.position.startX - currentWidth, currentHeight, 140, 100, 58, 78, 140, 137);
-        currentWidth += 140;
+        currentWidth += 139;
 
-        while(this.position.startX - currentWidth > -140){
+        while(this.position.startX - currentWidth > -139){
           brickCanvas.image(backgroundImage, this.position.startX - currentWidth, currentHeight, 140, 100, 58, 78, 140, 137);
-          currentWidth += 140;
+          currentWidth += 139;
         }
-        currentWidth = 140;
+        currentWidth = 139;
         currentHeight += 100 - 5;
       }
 
       currentHeight = 0;
 
-      currentWidth = this.position.endX;
+      currentWidth = this.position.endX - 1;
       while(currentHeight <= this.position.endY){
         brickCanvas.image(backgroundImage, currentWidth, currentHeight, 140, 100, 58, 78, 140, 137);
         
         while(currentWidth < resolution.x ){
-          brickCanvas.image(backgroundImage, currentWidth + 140, currentHeight, 140, 100, 58, 78, 140, 137);
-          currentWidth += 140;
+          brickCanvas.image(backgroundImage, currentWidth + 139, currentHeight, 140, 100, 58, 78, 140, 137);
+          currentWidth += 139;
         }
-        currentWidth = this.position.endX;
+        currentWidth = this.position.endX - 1;
         currentHeight += 100 - 5;
       }
     }
@@ -236,8 +236,6 @@ function setup(){
     rainbowCanvas = createGraphics(resolution.x, resolution.y);
     window.theWholeCanvas = createCanvas(resolution.x, resolution.y);
     brickCanvas = createGraphics(resolution.x, resolution.y);
-    
-    blendMode(REPLACE);
 
     rainbowCanvas.show();
     brickCanvas.show();
