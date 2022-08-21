@@ -15,8 +15,7 @@
             resizeCanvas(window.innerWidth, window.innerHeight);
             brickCanvas.resizeCanvas(window.innerWidth, window.innerHeight);
             rainbowCanvas.resizeCanvas(window.innerWidth, window.innerHeight);
-
-            game.displayGameBackground();
+            try{ onWindowResize(); } catch {}
         }
 
         // Runs each time the DOM window resize event fires.

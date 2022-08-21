@@ -6,7 +6,6 @@ let frame = 0;
 let colorNum = 0;
 let colors = {r: 0 , g: 0, b: 0};
 let g;
-let preResolution = {x: resolution.x, y: resolution.y};
 
 let backgroundImage;
 let backgroundImageCopy;
@@ -35,6 +34,15 @@ let walls = [];
 let wallHeight = .04;
 let wallwidth = .03;
 
+//Whenever the window resizes, this function is called with the resolution variable already updated.
+function onWindowResize() {
+  game.recalcScreen(); //Recalculate the positioning of the game
+  game.displayGameBackground(); //Redraw the bricks
+  game.drawRainbowCanvas(); //Redraw the rainbow background canvas
+  //Anything else you'd want to do...
+}
+
+
 class gameSystem{
     constructor(aspectRatio){
       this.recalcScreen();
@@ -52,24 +60,20 @@ class gameSystem{
       }
     }
   
-    displayGameScreen(){
-      this.recalcScreen()
-      image(gameScreenImage, this.position.startX, this.position.startY, this.widthOfGameScreen, this.heightOfGameScreen)
-      if(preResolution.x != resolution.x || preResolution.y != resolution.y){
-        console.log("ReCalculating")
-        let colorVal = 0;
-        let RBGColors = {r: 0, g: 0, b: 0};
-        for(lineHeight = 1; lineHeight <= resolution.y; lineHeight += 2){
-          RBGColors = colorFunc(colorVal);
-          rainbowCanvas.stroke(RBGColors.r, RBGColors.g, RBGColors.b);
-          rainbowCanvas.line(0, lineHeight, resolution.x, lineHeight);
-          colorVal += 5;
-        }
-        //preResolution = {x: resolution.x, y: resolution.y};
-        //This if conditions checks to see if screen has been modifyed. If so, resets the lines from rainbowCanvas. Otherwise, skip.
-        //PROBLEM: I should be able to set preResolution the the current resolution however, this is causing a white screen when screren is modyfyed..
-        // it currently runs everytime thus, not saving time and maybe nither space
+    drawRainbowCanvas(){
+      console.log("ReCalculating")
+      let colorVal = 0;
+      let RBGColors = {r: 0, g: 0, b: 0};
+      for(let lineHeight = 1; lineHeight <= resolution.y; lineHeight += 2){
+        RBGColors = colorFunc(colorVal);
+        rainbowCanvas.stroke(RBGColors.r, RBGColors.g, RBGColors.b);
+        rainbowCanvas.line(0, lineHeight, resolution.x, lineHeight);
+        colorVal += 5;
       }
+    }
+
+    displayGameScreen(){
+      image(gameScreenImage, this.position.startX, this.position.startY, this.widthOfGameScreen, this.heightOfGameScreen);
     }
   
     resetImage(images){
@@ -244,7 +248,7 @@ function setup(){
 
     let colorVal = 0;
     let RBGColors = {r: 0, g: 0, b: 0};
-    for(lineHeight = 1; lineHeight <= resolution.y; lineHeight += 2){
+    for(let lineHeight = 1; lineHeight <= resolution.y; lineHeight += 2){
       RBGColors = colorFunc(colorVal);
       rainbowCanvas.stroke(RBGColors.r, RBGColors.g, RBGColors.b);
       rainbowCanvas.line(0, lineHeight, resolution.x, lineHeight);
