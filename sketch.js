@@ -190,7 +190,13 @@ class floor{
   }
     
   moveVertically(){
-    this.startPosition.y += this.floorVelocity.y;
+    this.startPosition.y += this.moveVars.floorVelocity.y;
+  }
+
+  moveHorizontally(){
+    if(this.moveVars.floorVelocity.x > 0  || this.moveVars.floorVelocity.x < 0){
+      this.startPosition.x += this.moveVars.floorVelocity.x
+    }
   }
 
   doMovement(){
@@ -263,10 +269,17 @@ function setup(){
     game.displayGameBackground();
 
     startPosition = {x: 0, y: game.heightOfGameScreen / game.widthOfGameScreen};
-    floorVelocity = {x: 0, y: -.001};
+    floorVelocity = {x: 0.005, y: -.001};
     moveVars = {floorVelocity: floorVelocity};
     floors.push(new floor(startPosition, .2, moveVars, function(){
-      this.startPosition.y += this.moveVars.floorVelocity.y;
+      
+      this.moveVertically();
+
+      this.moveHorizontally();
+
+      if(this.startPosition.x + this.length  > 1 || this.startPosition.x  < 0){
+        this.moveVars.floorVelocity.x *= -1;
+      }
     }));
 }
 
