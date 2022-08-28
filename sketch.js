@@ -198,20 +198,6 @@ class floor{
     if(this.moveVars.floorVelocity.x != 0){
       this.startPosition.x += this.moveVars.floorVelocity.x
     }
-
-    if(this.moveVars.beginNEndPosition){
-      if(this.moveVars.floorVelocity.x > 0){
-        if(this.startPosition.x + this.length > this.moveVars.beginNEndPosition.end){ // If condition checks using the right edge of line
-          this.moveVars.floorVelocity.x *= -1;
-          this.startPosition.x = (this.moveVars.beginNEndPosition.end - ((this.startPosition.x + this.length) - this.moveVars.beginNEndPosition.end)) - this.length;
-        }
-      }else if(this.moveVars.floorVelocity.x < 0){
-        if(this.startPosition.x < this.moveVars.beginNEndPosition.begin){ // If condition checks using the left edge of line
-          this.moveVars.floorVelocity.x *= -1;
-          this.startPosition.x = this.moveVars.beginNEndPosition.begin + (this.moveVars.beginNEndPosition.begin - this.startPosition.x);
-        }
-      }
-    }
   }
 
   doMovement(){
@@ -221,14 +207,13 @@ class floor{
   checkIfBallOnFloor(ball, nextBallPosition){
     if(nextBallPosition.x >= this.startPosition.x && nextBallPosition.x <= this.startPosition.x + this.length){
       if(ball.onFloor != this){
-        if(ball.ballPosition.y  + (ball.ballDiameter / 2) - .0025 <= this.startPosition.y && nextBallPosition.y + (ball.ballDiameter / 2) - .0025 >= this.startPosition.y){
+        if(ball.ballPosition.y  - (ball.ballDiameter / 2) <= this.startPosition.y && nextBallPosition.y + (ball.ballDiameter / 2) - .0025 >= this.startPosition.y){
           this.ball = ball;
           ball.onFloor = this;
           ball.ballVelocity.y = 0;
           ball.ballPosition.y = this.startPosition.y - (this.ballDiameter / 2) - .0025;
           ball.ballPosition.x = nextBallPosition.x;
           ball.rotation += ((40 * (ball.ballVelocity.x)) / (PI * ball.ballDiameter)) * 2 * PI;
-          //nextBallPosition.y = this.startPosition.y - (this.ballDiameter / 2) - .0025;
           return true;
         }else{
           this.ball = false;
@@ -291,13 +276,20 @@ class ball{
             this.ballVelocity.x = 0;
           }
         }
-      }else{
-        //Less friction
+      }else{//Less friction
         this.ballVelocity.x *= ballFric;
       }
     }
 
-    return nextXPosition += this.ballVelocity.x;
+    this.rotation += ((40 * (this.ballVelocity.x)) / (PI * this.ballDiameter)) * 2 * PI;
+    nextXPosition += this.ballVelocity.x;
+
+    if(nextXPosition < 0){
+      nextXPosition += 1;
+    }else if(nextXPosition > 1){
+      nextXPosition -= 1;
+    }
+    return nextXPosition;
   }
 
   moveVertically(nextYPosition){
@@ -306,7 +298,7 @@ class ball{
       this.ballVelocity.y = Math.min(maxFallSpeed, this.ballVelocity.y);
       return nextYPosition += this.ballVelocity.y;
     }else{
-      return this.ballPosition.y;
+      return nextYPosition;
     }
   }
 
@@ -335,8 +327,6 @@ class ball{
     let nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
     nextBallPosition.y = this.moveVertically(nextBallPosition.y);
     nextBallPosition.x = this.moveHorizontally(nextBallPosition.x);
-    this.rotation += ((40 * (this.ballVelocity.x)) / (PI * this.ballDiameter)) * 2 * PI;
-
 
     if(this.onFloor){
       this.ballPosition.y = this.onFloor.startPosition.y - (this.ballDiameter / 2) - .0025;
@@ -412,7 +402,7 @@ function setup(){
 
   gameBall = new ball(gameBallRatio, ballStartPosition);
 
-  //Floor moving up, down left, and right. Contains a beginning and end position. Stays in the game screen
+  //Floor moving up, down, left, and right. Contains a beginning and end position. Stays in the game screen
   let startPosition = {x: 0, y: heightOfGameScreen};
   let floorVelocity = {x: 0.005, y: -.001};
   let beginNEndPosition = {begin: 0.2, end: .8};
@@ -426,6 +416,42 @@ function setup(){
     if(this.startPosition.y < 0 || this.startPosition.y > heightOfGameScreen){
       this.moveVars.floorVelocity.y *= -1;
     }
+
+    if(this.moveVars.floorVelocity.x > 0){
+      if(this.startPosition.x + this.length > this.moveVars.beginNEndPosition.end){ // If condition checks using the right edge of line
+        this.moveVars.floorVelocity.x *= -1;
+
+        let preBallPosition;
+        if(this.ball){
+          preBallPosition = this.ball.ballPosition.x - this.startPosition.x;
+          //preBallPosition = abs(this.moveVars.beginNEndPosition.end - this.ball.ballPosition.x);
+          console.log("previous: " + preBallPosition);
+        }
+        this.startPosition.x = (this.moveVars.beginNEndPosition.end - ((this.startPosition.x + this.length) - this.moveVars.beginNEndPosition.end)) - this.length;
+        if(this.ball){
+          //this.ball.ballPosition.x = this.startPosition.x + this.length - preBallPosition;
+          this.ball.ballPosition.x = this.startPosition.x + preBallPosition;
+          console.log("after: " + (this.ball.ballPosition.x - this.startPosition.x));
+        }
+      }
+    }else if(this.moveVars.floorVelocity.x < 0){
+      if(this.startPosition.x < this.moveVars.beginNEndPosition.begin){ // If condition checks using the left edge of line
+        this.moveVars.floorVelocity.x *= -1;
+
+        let preBallPosition;
+        if(this.ball){
+          preBallPosition = this.ball.ballPosition.x - this.startPosition.x;
+          //preBallPosition = this.ball.ballPosition.x - this.moveVars.beginNEndPosition.begin;
+          console.log("previous: " + preBallPosition);
+        }
+        this.startPosition.x = this.moveVars.beginNEndPosition.begin + (this.moveVars.beginNEndPosition.begin - this.startPosition.x);
+        if(this.ball){
+          this.ball.ballPosition.x = this.startPosition.x + preBallPosition;
+          console.log("after: " + (this.ball.ballPosition.x - this.startPosition.x));
+        }
+      }
+    }
+
   }));
 
   //Floor moving only left and right with a beginning and end position
@@ -438,18 +464,41 @@ function setup(){
     this.moveVertically();
 
     this.moveHorizontally();
+
+    if(this.moveVars.floorVelocity.x > 0){
+      if(this.startPosition.x + this.length > this.moveVars.beginNEndPosition.end){ // If condition checks using the right edge of line
+        this.moveVars.floorVelocity.x *= -1;
+        this.startPosition.x = (this.moveVars.beginNEndPosition.end - ((this.startPosition.x + this.length) - this.moveVars.beginNEndPosition.end)) - this.length;
+      }
+    }else if(this.moveVars.floorVelocity.x < 0){
+      if(this.startPosition.x < this.moveVars.beginNEndPosition.begin){ // If condition checks using the left edge of line
+        this.moveVars.floorVelocity.x *= -1;
+        this.startPosition.x = this.moveVars.beginNEndPosition.begin + (this.moveVars.beginNEndPosition.begin - this.startPosition.x);
+      }
+    }
   }));
 
-  //Floor on t0p left corner to test ball
+  //Floor on top left corner to test ball
   startPosition = {x: 0, y: .2};
   floorVelocity = {x: 0, y: 0};
   beginNEndPosition = false;
   moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
-  floors.push(new floor(startPosition, 1, moveVars, function(){
+  floors.push(new floor(startPosition, .8, moveVars, function(){}));
+
+  
+  //Floor on right side that moves only vertically. Is created to test ball
+  startPosition = {x: .8, y: heightOfGameScreen};
+  floorVelocity = {x: 0, y: -.005};
+  beginNEndPosition = {begin: .2, end: heightOfGameScreen};
+  moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
+  floors.push(new floor(startPosition, .2, moveVars, function(){
     
     this.moveVertically();
 
-    this.moveHorizontally();
+    if(this.startPosition.y < this.moveVars.beginNEndPosition.begin || this.startPosition.y > this.moveVars.beginNEndPosition.end){
+      this.moveVars.floorVelocity.y *= -1;
+    }
+
   }));
 }
 
@@ -466,6 +515,7 @@ draw = function(){
     game.displayFloor(floors[floorIndex]);
   }
 
+  //By putting these two lines before the for loop above, it allows the ball to be in the correct position if floor is moving left and right
   gameBall.doMovement(floors);
   game.displayBall(gameBall);
 
