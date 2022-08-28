@@ -15,7 +15,7 @@ let heightOfGameScreen;
 
 let ballImage;
 let ballStartPosition = {x: .025, y: .05};
-let gameBallRatio = .05;
+let gameBallRatio = .05; // Should this be called ballDiameter instead?
 let ballAcc = .00015;
 let gravity = .0006;
 let maxFallSpeed = .0175;
@@ -144,7 +144,7 @@ class gameSystem{
   }
 
   displayBall(ball){
-    let position = g.c(ball.BallPosition);
+    let position = g.c(ball.ballPosition);
     let ballDiameter = this.perToPx(ball.ballDiameter);
 
     translate(position.x, position.y);
@@ -217,6 +217,147 @@ class floor{
   doMovement(){
     this.moveFunc();
   }
+
+  checkIfBallOnFloor(ball, nextBallPosition){
+    if(nextBallPosition.x >= this.startPosition.x && nextBallPosition.x <= this.startPosition.x + this.length){
+      if(ball.onFloor != this){
+        if(ball.ballPosition.y  + (ball.ballDiameter / 2) - .0025 <= this.startPosition.y && nextBallPosition.y + (ball.ballDiameter / 2) - .0025 >= this.startPosition.y){
+          this.ball = ball;
+          ball.onFloor = this;
+          ball.ballVelocity.y = 0;
+          ball.ballPosition.y = this.startPosition.y - (this.ballDiameter / 2) - .0025;
+          ball.ballPosition.x = nextBallPosition.x;
+          ball.rotation += ((40 * (ball.ballVelocity.x)) / (PI * ball.ballDiameter)) * 2 * PI;
+          //nextBallPosition.y = this.startPosition.y - (this.ballDiameter / 2) - .0025;
+          return true;
+        }else{
+          this.ball = false;
+          ball.onFloor = false;
+          return false;
+        }
+      }else{
+        return true;
+      }
+    }else{
+      return false;
+    }
+  }
+}
+
+
+class ball{
+  constructor(ballDiameter, ballPosition){
+      this.ballDiameter = ballDiameter;
+      this.ballPosition = {x: ballPosition.x, y: ballPosition.y};
+      this.ballVelocity = {x: 0, y: 0};
+      this.onFloor = false;
+      this.rotation = 0;
+      this.addFloorVelocity = {x: 0, y: 0};
+  }
+
+  moveHorizontally(nextXPosition){
+    if(keyIsDown(LEFT_ARROW)){
+
+      if(this.ballVelocity.x > -maxMoveSpeed){
+        this.ballVelocity.x -= ballAcc;
+      }
+
+      if(this.ballVelocity.x > 0){
+        this.ballVelocity.x -= ballAcc;
+      }
+
+    }else if(keyIsDown(RIGHT_ARROW)){
+
+      if(this.ballVelocity.x < maxMoveSpeed){
+        this.ballVelocity.x += ballAcc;
+      }
+
+      if(this.ballVelocity.x < 0){
+        this.ballVelocity.x += ballAcc;
+      }
+
+    }else{
+      if(this.onFloor){
+        if(this.ballVelocity.x > 0){
+          this.ballVelocity.x *= ballFric;
+          this.ballVelocity.x -= ballFricConst;
+          if(this.ballVelocity.x < 0){
+            this.ballVelocity.x = 0;
+          }
+        }else if(this.ballVelocity.x < 0){
+          this.ballVelocity.x *= ballFric;
+          this.ballVelocity.x += ballFricConst;
+          if(this.ballVelocity.x > 0){
+            this.ballVelocity.x = 0;
+          }
+        }
+      }else{
+        //Less friction
+        this.ballVelocity.x *= ballFric;
+      }
+    }
+
+    return nextXPosition += this.ballVelocity.x;
+  }
+
+  moveVertically(nextYPosition){
+    if(!this.onFloor){//gravity
+      this.ballVelocity.y += gravity;
+      this.ballVelocity.y = Math.min(maxFallSpeed, this.ballVelocity.y);
+      return nextYPosition += this.ballVelocity.y;
+    }else{
+      return this.ballPosition.y;
+    }
+  }
+
+  newBallPosition(){
+
+  }
+
+  ifBallOnFloor(){
+
+  }
+
+  ifBallNoLongerOnFloor(){
+
+  }
+
+  ifBallOutOfGame(){
+
+  }
+
+  setPositions(nextBallPosition){
+    this.ballPosition.x = nextBallPosition.x;
+    this.ballPosition.y = nextBallPosition.y;
+  }
+
+  doMovement(floors){
+    let nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
+    nextBallPosition.y = this.moveVertically(nextBallPosition.y);
+    nextBallPosition.x = this.moveHorizontally(nextBallPosition.x);
+    this.rotation += ((40 * (this.ballVelocity.x)) / (PI * this.ballDiameter)) * 2 * PI;
+
+
+    if(this.onFloor){
+      this.ballPosition.y = this.onFloor.startPosition.y - (this.ballDiameter / 2) - .0025;
+      this.ballPosition.x = nextBallPosition.x + this.onFloor.moveVars.floorVelocity.x;
+      nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
+
+      if(!this.onFloor.checkIfBallOnFloor(this, nextBallPosition)){
+        this.onFloor = false;
+      }
+    }
+    if(!this.onFloor){
+      for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+        if(floors[floorIndex].checkIfBallOnFloor(this, nextBallPosition)){
+          break;
+        }
+      }
+    }
+    if(!this.onFloor){
+      this.setPositions(nextBallPosition);
+    }    
+  }
 }
 
 function colorFunc(colorNum){
@@ -269,6 +410,9 @@ function setup(){
   game.drawRainbowCanvas();
   game.displayGameBackground();
 
+  gameBall = new ball(gameBallRatio, ballStartPosition);
+
+  //Floor moving up, down left, and right. Contains a beginning and end position. Stays in the game screen
   let startPosition = {x: 0, y: heightOfGameScreen};
   let floorVelocity = {x: 0.005, y: -.001};
   let beginNEndPosition = {begin: 0.2, end: .8};
@@ -284,11 +428,24 @@ function setup(){
     }
   }));
 
+  //Floor moving only left and right with a beginning and end position
   startPosition = {x: .2, y: heightOfGameScreen / 2};
   floorVelocity = {x: 0.005, y: 0};
   beginNEndPosition = {begin: 0.2, end: .8};
   moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
   floors.push(new floor(startPosition, .2, moveVars, function(){
+    
+    this.moveVertically();
+
+    this.moveHorizontally();
+  }));
+
+  //Floor on t0p left corner to test ball
+  startPosition = {x: 0, y: .2};
+  floorVelocity = {x: 0, y: 0};
+  beginNEndPosition = false;
+  moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
+  floors.push(new floor(startPosition, 1, moveVars, function(){
     
     this.moveVertically();
 
@@ -308,6 +465,9 @@ draw = function(){
     floors[floorIndex].doMovement();
     game.displayFloor(floors[floorIndex]);
   }
+
+  gameBall.doMovement(floors);
+  game.displayBall(gameBall);
 
   frame++;
 }
