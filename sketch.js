@@ -200,32 +200,33 @@ class floor{
     }
   }
 
-  doMovement(){
+  doMovement(ball){
     this.moveFunc();
+    this.checkIfBallOnFloor(ball);
   }
 
-  checkIfBallOnFloor(ball, nextBallPosition){
-    if(nextBallPosition.x >= this.startPosition.x && nextBallPosition.x <= this.startPosition.x + this.length){
-      if(ball.onFloor != this){
-        if(ball.ballPosition.y  - (ball.ballDiameter / 2) <= this.startPosition.y && nextBallPosition.y + (ball.ballDiameter / 2) - .0025 >= this.startPosition.y){
-          this.ball = ball;
-          ball.onFloor = this;
-          ball.ballVelocity.y = 0;
-          ball.ballPosition.y = this.startPosition.y - (this.ballDiameter / 2) - .0025;
-          ball.ballPosition.x = nextBallPosition.x;
-          ball.rotation += ((40 * (ball.ballVelocity.x)) / (PI * ball.ballDiameter)) * 2 * PI;
-          return true;
-        }else{
-          this.ball = false;
-          ball.onFloor = false;
-          return false;
-        }
+  checkIfBallOnFloor(ball){
+    if(ball.ballPosition.x >= this.startPosition.x && ball.ballPosition.x <= this.startPosition.x + this.length){
+      if(ball.ballPosition.y  - (ball.ballDiameter / 2) <= this.startPosition.y && ball.ballPosition.y + (ball.ballDiameter / 2)>= this.startPosition.y){
+        this.ball = ball;
+        ball.onFloor = this;
+        ball.ballVelocity.y = 0;
+        ball.ballPosition.y = this.startPosition.y - (ball.ballDiameter / 2) - .0025;
+        //ball.ballPosition.x = nextBallPosition.x;
+        //ball.rotation += ((40 * (ball.ballVelocity.x)) / (PI * ball.ballDiameter)) * 2 * PI;
       }else{
-        return true;
+        //this.ball = false;
+        //ball.onFloor = false;
       }
     }else{
-      return false;
+      this.ball = false;
+      ball.onFloor = false;      
     }
+  }
+
+  repositionBall(preBallPosition){
+    this.ball.ballPosition.x = this.startPosition.x + preBallPosition;
+    this.ball.ballPosition.y = this.startPosition.y - (this.ball.ballDiameter / 2) - .0025;
   }
 }
 
@@ -323,30 +324,20 @@ class ball{
     this.ballPosition.y = nextBallPosition.y;
   }
 
+  withinFloor(newHorizontalPos){
+    if(newHorizontalPos < this.onFloor.startPosition.x || newHorizontalPos > this.onFloor.startPosition.x + this.onFloor.length){
+      return false;
+    }else{
+      return true;
+    }
+  }
+
   doMovement(floors){
     let nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
-    nextBallPosition.y = this.moveVertically(nextBallPosition.y);
     nextBallPosition.x = this.moveHorizontally(nextBallPosition.x);
-
-    if(this.onFloor){
-      this.ballPosition.y = this.onFloor.startPosition.y - (this.ballDiameter / 2) - .0025;
-      this.ballPosition.x = nextBallPosition.x + this.onFloor.moveVars.floorVelocity.x;
-      nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
-
-      if(!this.onFloor.checkIfBallOnFloor(this, nextBallPosition)){
-        this.onFloor = false;
-      }
-    }
-    if(!this.onFloor){
-      for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
-        if(floors[floorIndex].checkIfBallOnFloor(this, nextBallPosition)){
-          break;
-        }
-      }
-    }
-    if(!this.onFloor){
-      this.setPositions(nextBallPosition);
-    }    
+    nextBallPosition.y = this.moveVertically(nextBallPosition.y);
+    this.setPositions(nextBallPosition);
+    if(!this.onFloor){console.log("FALSE")}
   }
 }
 
@@ -404,10 +395,15 @@ function setup(){
 
   //Floor moving up, down, left, and right. Contains a beginning and end position. Stays in the game screen
   let startPosition = {x: 0, y: heightOfGameScreen};
-  let floorVelocity = {x: 0.005, y: -.001};
-  let beginNEndPosition = {begin: 0.2, end: .8};
+  let floorVelocity = {x: 0.009, y: -.001};
+  let beginNEndPosition = {begin: 0.1, end: .9};
   let moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
   floors.push(new floor(startPosition, .2, moveVars, function(){
+    let preBallPosition;
+
+    if(this.ball){
+        preBallPosition = this.ball.ballPosition.x - this.startPosition.x;
+    }
     
     this.moveVertically();
 
@@ -419,39 +415,20 @@ function setup(){
 
     if(this.moveVars.floorVelocity.x > 0){
       if(this.startPosition.x + this.length > this.moveVars.beginNEndPosition.end){ // If condition checks using the right edge of line
-        this.moveVars.floorVelocity.x *= -1;
 
-        let preBallPosition;
-        if(this.ball){
-          preBallPosition = this.ball.ballPosition.x - this.startPosition.x;
-          //preBallPosition = abs(this.moveVars.beginNEndPosition.end - this.ball.ballPosition.x);
-          console.log("previous: " + preBallPosition);
-        }
+        this.moveVars.floorVelocity.x *= -1;
         this.startPosition.x = (this.moveVars.beginNEndPosition.end - ((this.startPosition.x + this.length) - this.moveVars.beginNEndPosition.end)) - this.length;
-        if(this.ball){
-          //this.ball.ballPosition.x = this.startPosition.x + this.length - preBallPosition;
-          this.ball.ballPosition.x = this.startPosition.x + preBallPosition;
-          console.log("after: " + (this.ball.ballPosition.x - this.startPosition.x));
-        }
       }
     }else if(this.moveVars.floorVelocity.x < 0){
       if(this.startPosition.x < this.moveVars.beginNEndPosition.begin){ // If condition checks using the left edge of line
-        this.moveVars.floorVelocity.x *= -1;
 
-        let preBallPosition;
-        if(this.ball){
-          preBallPosition = this.ball.ballPosition.x - this.startPosition.x;
-          //preBallPosition = this.ball.ballPosition.x - this.moveVars.beginNEndPosition.begin;
-          console.log("previous: " + preBallPosition);
-        }
+        this.moveVars.floorVelocity.x *= -1;
         this.startPosition.x = this.moveVars.beginNEndPosition.begin + (this.moveVars.beginNEndPosition.begin - this.startPosition.x);
-        if(this.ball){
-          this.ball.ballPosition.x = this.startPosition.x + preBallPosition;
-          console.log("after: " + (this.ball.ballPosition.x - this.startPosition.x));
-        }
       }
     }
-
+    if(this.ball){
+      this.repositionBall(preBallPosition);      
+    }
   }));
 
   //Floor moving only left and right with a beginning and end position
@@ -498,7 +475,6 @@ function setup(){
     if(this.startPosition.y < this.moveVars.beginNEndPosition.begin || this.startPosition.y > this.moveVars.beginNEndPosition.end){
       this.moveVars.floorVelocity.y *= -1;
     }
-
   }));
 }
 
@@ -511,7 +487,7 @@ draw = function(){
   game.displayGameScreen();
 
   for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
-    floors[floorIndex].doMovement();
+    floors[floorIndex].doMovement(gameBall);
     game.displayFloor(floors[floorIndex]);
   }
 
