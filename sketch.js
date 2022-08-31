@@ -369,7 +369,7 @@ class ball{
     this.ballPosition.x = nextBallPosition.x;
     this.ballPosition.y = nextBallPosition.y;
   }
-}
+}//testing git
 
 function colorFunc(colorNum){
   colorNum = colorNum % 1529;
