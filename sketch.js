@@ -263,7 +263,7 @@ class ball{
       this.onFloor = false;
       this.rotation = 0;
       this.addFloorVelocity = {x: 0, y: 0};
-      this.bounce = false;
+      this.bounce = true;
   }
 
   moveHorizontally(nextXPosition){
@@ -347,16 +347,25 @@ class ball{
         this.onFloor = false;
       }
     }
-
+    
     if(!this.onFloor){
       for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
         if(floors[floorIndex].checkIfBallHitFloor(this, nextBallPosition) || floors[floorIndex].checkIfBallCollideFloor(this)){
-          floors[floorIndex].setBallOnFloor(this);
-          nextBallPosition.y = this.ballPosition.y;
+          if(this.ballVelocity.y > maxFallSpeed * (3/5)){
+            nextBallPosition.y = floors[floorIndex].startPosition.y - (this.ballDiameter / 2) - .0025;
+            this.ballVelocity.y = -ballBounce * ((keyIsDown(UP_ARROW) && this.bounce) ? 1.45 : 1);     
+            nextBallPosition.y += this.ballVelocity.y;
+            this.bounce = false;
+          }else{
+            floors[floorIndex].setBallOnFloor(this);
+            nextBallPosition.y = this.ballPosition.y;
+            this.bounce = true;
+          }
           break;
         }
       }
     }
+    //console.log(this.onFloor ? "on Floor" : "Not on Floor")
     this.ballPosition.x = nextBallPosition.x;
     this.ballPosition.y = nextBallPosition.y;
   }
