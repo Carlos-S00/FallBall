@@ -20,9 +20,9 @@ let ballAcc = .00015;
 let gravity = .0006;
 let maxFallSpeed = .0175;
 let maxMoveSpeed = .006;
-let ballFric = .94;
-let airFric = 1;
-let ballFricConst = .0004;
+let ballFric = .97;
+let airFric = .99;
+let ballFricConst = .00018;
 let ballBounce = .009;
 let floorEffectSpeed = 1;
 
@@ -213,14 +213,12 @@ class floor{
     ball.ballPosition.y = this.startPosition.y - (ball.ballDiameter / 2) - .0025;
   }
 
-  checkIfBallOnFloor(ball, nextBallPosition){
+  checkIfBallHitFloor(ball, nextBallPosition){
     if(nextBallPosition.x >= this.startPosition.x && nextBallPosition.x <= this.startPosition.x + this.length){
       if(ball.onFloor != this){
-        if(ball.ballPosition.y  - (ball.ballDiameter / 2) <= this.startPosition.y && nextBallPosition.y + (ball.ballDiameter / 2) - .0025 >= this.startPosition.y){
+        if(ball.ballPosition.y  + (ball.ballDiameter / 2) <= this.startPosition.y && nextBallPosition.y + (ball.ballDiameter / 2) >= this.startPosition.y){
           return true;
         }else{
-          this.ball = false;
-          ball.onFloor = false;
           return false;
         }
       }else{
@@ -230,9 +228,33 @@ class floor{
       return false;
     }
   }
+
+  checkIfBallCollideFloor(ball){
+    if(ball.ballPosition.x >= this.startPosition.x && ball.ballPosition.x <= this.startPosition.x + this.length){
+      if(ball.ballPosition.y + (ball.ballDiameter / 2) <= this.prevPosition.y && ball.ballPosition.y + (ball.ballDiameter / 2) >= this.startPosition.y){
+        return true;
+      }else{
+        return false;
+      }
+    }else{
+      return false;
+    }
+  }
 }
 
+/* 
+  Ball responsibility to handle bouncing
+  Based on how fast the ball is falling and the velocity of the floor
 
+  Ability to jump:
+    Limit the amount we can jump. once
+    holding space will do nothing after
+
+  When to jump:
+    Bool of when to jump
+    When resting on flat ground, set bool to true
+
+//*/
 class ball{
   constructor(ballDiameter, ballPosition){
       this.ballDiameter = ballDiameter;
@@ -241,6 +263,7 @@ class ball{
       this.onFloor = false;
       this.rotation = 0;
       this.addFloorVelocity = {x: 0, y: 0};
+      this.bounce = false;
   }
 
   moveHorizontally(nextXPosition){
@@ -280,13 +303,17 @@ class ball{
           }
         }
       }else{//Less friction
-        this.ballVelocity.x *= ballFric;
+        this.ballVelocity.x *= airFric;
       }
     }
 
     this.rotation += ((40 * (this.ballVelocity.x)) / (PI * this.ballDiameter)) * 2 * PI;
     nextXPosition += this.ballVelocity.x;
 
+    return this.ifBallOutOfGame(nextXPosition);
+  }
+  
+  ifBallOutOfGame(nextXPosition){
     if(nextXPosition < 0){
       nextXPosition += 1;
     }else if(nextXPosition > 1){
@@ -304,32 +331,18 @@ class ball{
     return nextYPosition;
   }
 
-  newBallPosition(){
-
-  }
-
-  ifBallOnFloor(){
-
-  }
-
-  ifBallNoLongerOnFloor(){
-
-  }
-
-  ifBallOutOfGame(){
-
-  }
-
   doMovement(floors){
     let nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
-    nextBallPosition.y = this.moveVertically(nextBallPosition.y);
     nextBallPosition.x = this.moveHorizontally(nextBallPosition.x);
+    nextBallPosition.y = this.moveVertically(nextBallPosition.y);
 
     if(this.onFloor){
-      nextBallPosition.y += this.onFloor.startPosition.y - this.onFloor.prevPosition.y;
       nextBallPosition.x += this.onFloor.startPosition.x - this.onFloor.prevPosition.x;
+      nextBallPosition.y += this.onFloor.startPosition.y - this.onFloor.prevPosition.y;
       
-      if(!this.onFloor.checkIfBallOnFloor(this, nextBallPosition)){
+      if(!this.onFloor.checkIfBallHitFloor(this, nextBallPosition)){
+        this.ballVelocity.x += this.onFloor.startPosition.x - this.onFloor.prevPosition.x;
+        this.ballVelocity.y += this.onFloor.startPosition.y - this.onFloor.prevPosition.y;
         this.onFloor.ball = false;
         this.onFloor = false;
       }
@@ -337,7 +350,7 @@ class ball{
 
     if(!this.onFloor){
       for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
-        if(floors[floorIndex].checkIfBallOnFloor(this, nextBallPosition)){
+        if(floors[floorIndex].checkIfBallHitFloor(this, nextBallPosition) || floors[floorIndex].checkIfBallCollideFloor(this)){
           floors[floorIndex].setBallOnFloor(this);
           nextBallPosition.y = this.ballPosition.y;
           break;
@@ -487,9 +500,8 @@ draw = function(){
     game.displayFloor(floors[floorIndex]);
   }
 
-  //By putting these two lines before the for loop above, it allows the ball to be in the correct position if floor is moving left and right
   gameBall.doMovement(floors);
   game.displayBall(gameBall);
 
   frame++;
-}//Testing push on Discord
+}
