@@ -24,6 +24,7 @@ let ballFric = .97;
 let airFric = .99;
 let ballFricConst = .00018;
 let ballBounce = .009;
+let bounceFric = -.0008;
 let floorEffectSpeed = 1;
 
 let floors = [];
@@ -264,6 +265,7 @@ class ball{
       this.rotation = 0;
       this.addFloorVelocity = {x: 0, y: 0};
       this.bounce = true;
+      this.bounceFric = false;
   }
 
   moveHorizontally(nextXPosition){
@@ -337,23 +339,27 @@ class ball{
     nextBallPosition.y = this.moveVertically(nextBallPosition.y);
 
     if(this.onFloor){
-      nextBallPosition.x += this.onFloor.startPosition.x - this.onFloor.prevPosition.x;
-      nextBallPosition.y += this.onFloor.startPosition.y - this.onFloor.prevPosition.y;
+      let floorVelocity = {x: this.onFloor.startPosition.x - this.onFloor.prevPosition.x, y: this.onFloor.startPosition.y - this.onFloor.prevPosition.y};
+      nextBallPosition.x += floorVelocity.x;
+      nextBallPosition.y += floorVelocity.y;
       
       if(!this.onFloor.checkIfBallHitFloor(this, nextBallPosition)){
-        this.ballVelocity.x += this.onFloor.startPosition.x - this.onFloor.prevPosition.x;
-        this.ballVelocity.y += this.onFloor.startPosition.y - this.onFloor.prevPosition.y;
+        this.ballVelocity.x += floorVelocity.x;
+        this.ballVelocity.y += floorVelocity.y;
         this.onFloor.ball = false;
         this.onFloor = false;
       }
     }
-    
+    // this.ballVelocity.y > maxFallSpeed * (3/5)
     if(!this.onFloor){
       for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
         if(floors[floorIndex].checkIfBallHitFloor(this, nextBallPosition) || floors[floorIndex].checkIfBallCollideFloor(this)){
-          if(this.ballVelocity.y > maxFallSpeed * (3/5)){
+          let floorVelocity = {x: floors[floorIndex].startPosition.x - floors[floorIndex].prevPosition.x, y: floors[floorIndex].startPosition.y - floors[floorIndex].prevPosition.y};
+          let relativeVal = (this.ballVelocity.y - floorVelocity.y);
+          let absoluteVal = -relativeVal + floorVelocity.y;
+          if(absoluteVal * .75 < -.01){
             nextBallPosition.y = floors[floorIndex].startPosition.y - (this.ballDiameter / 2) - .0025;
-            this.ballVelocity.y = -ballBounce * ((keyIsDown(UP_ARROW) && this.bounce) ? 1.45 : 1);     
+            this.ballVelocity.y = (absoluteVal) * ((keyIsDown(UP_ARROW) && this.bounce) ? .8 : .65);     
             nextBallPosition.y += this.ballVelocity.y;
             this.bounce = false;
           }else{
@@ -369,7 +375,7 @@ class ball{
     this.ballPosition.x = nextBallPosition.x;
     this.ballPosition.y = nextBallPosition.y;
   }
-}//testing git
+}
 
 function colorFunc(colorNum){
   colorNum = colorNum % 1529;
