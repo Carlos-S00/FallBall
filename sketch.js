@@ -33,7 +33,7 @@ let holesize = gameBallRatio * 3;
 let floorSpeed = .0001;
 
 let walls = [];
-let wallHeight = .04;
+let wallHeight = -.04;
 let wallwidth = .03;
 
 //Whenever the window resizes, this function is called with the resolution variable already updated.
@@ -127,11 +127,13 @@ class gameSystem{
   }
 
   displayWall(wall){
-    wall.colorNum = this.LineColor(wall.colorNum);
-    let startPosition = g.c(wall.topPosition);
-    let endPosition = g.c(wall.bottomPosition);
+    let bottomPosition = g.c(wall.bottomPosition);
+    let topPosition = {x: wall.bottomPosition.x, y: wall.bottomPosition.y + wall.length}
+    topPosition = g.c(topPosition);
 
-    line(startPosition.x, startPosition.y, endPosition.x, endPosition.y);
+    erase();
+    line(bottomPosition.x, bottomPosition.y, topPosition.x, topPosition.y);
+    noErase();
   }
   
   displayFloor(floor){
@@ -190,6 +192,7 @@ class floor{
       this.moveVars = false;
     }
     this.prevPosition = false;
+    this.hasWall = false;
   }
     
   moveVertically(){
@@ -240,6 +243,35 @@ class floor{
     }else{
       return false;
     }
+  }
+}
+
+
+class wall{
+  constructor(bottomPosition, length, onFloor, moveFunc){
+    this.bottomPosition = {x: bottomPosition.x, y: bottomPosition.y};
+    this.length = length;
+    this.onFloor = onFloor;
+    this.moveFunc = moveFunc;
+  }
+
+  respositionWall(){
+    this.bottomPosition.x +=  this.onFloor.startPosition.x - this.onFloor.prevPosition.x;
+    this.bottomPosition.y += this.onFloor.startPosition.y - this.onFloor.prevPosition.y;
+  }
+  
+  checkIfBallHitWall(ball, nextBallPosition){
+    if(ball.ballPosition.x + ball.ballDiameter < this.bottomPosition.x && nextBallPosition.x + ball.ballDiameter > this.bottomPosition.x || 
+       ball.ballPosition.x - ball.ballDiameter > this.bottomPosition.x && nextBallPosition.x - ball.ballDiameter < this.bottomPosition.x
+      ){
+        return true;
+    }else{
+      return false;
+    }
+  }
+
+  doMovement(){
+    this.moveFunc();
   }
 }
 
@@ -342,6 +374,12 @@ class ball{
       let floorVelocity = {x: this.onFloor.startPosition.x - this.onFloor.prevPosition.x, y: this.onFloor.startPosition.y - this.onFloor.prevPosition.y};
       nextBallPosition.x += floorVelocity.x;
       nextBallPosition.y += floorVelocity.y;
+
+      if(this.onFloor.hasWall){
+        if(this.onFloor.hasWall.checkIfBallHitWall(this, nextBallPosition)){
+          nextBallPosition.x = this.onFloor.hasWall.bottomPosition.x - this.ballDiameter;
+        }
+      }
       
       if(!this.onFloor.checkIfBallHitFloor(this, nextBallPosition)){
         this.ballVelocity.x += floorVelocity.x;
@@ -485,7 +523,6 @@ function setup(){
   moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
   floors.push(new floor(startPosition, .8, moveVars, function(){}));
 
-  
   //Floor on right side that moves only vertically. Is created to test ball
   startPosition = {x: .8, y: heightOfGameScreen};
   floorVelocity = {x: 0, y: -.005};
@@ -500,6 +537,17 @@ function setup(){
     }
 
   }));
+
+  let positionOnFloor = .75
+  let onFloor = floors[2];
+  let bottomPosition = {x: onFloor.length * positionOnFloor, y: onFloor.startPosition.y}
+  let height = wallHeight;
+  walls.push(new wall(bottomPosition, height, onFloor, function(){
+
+    this.respositionWall();
+
+  }));
+  floors[2].hasWall = walls[walls.length - 1];
 }
 
 draw = function(){
@@ -513,6 +561,11 @@ draw = function(){
   for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
     floors[floorIndex].doMovement();
     game.displayFloor(floors[floorIndex]);
+  }
+
+  for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
+    walls[wallIndex].doMovement();
+    game.displayWall(walls[wallIndex]);
   }
 
   gameBall.doMovement(floors);
