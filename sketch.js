@@ -253,21 +253,52 @@ class wall{
     this.length = length;
     this.onFloor = onFloor;
     this.moveFunc = moveFunc;
+    this.prevPosition = false;
   }
 
-  respositionWall(){
+  repositionWall(){
+    this.prevPosition = {x: this.bottomPosition.x, y: this.bottomPosition.y};
     this.bottomPosition.x +=  this.onFloor.startPosition.x - this.onFloor.prevPosition.x;
     this.bottomPosition.y += this.onFloor.startPosition.y - this.onFloor.prevPosition.y;
   }
   
-  checkIfBallHitWall(ball, nextBallPosition){
-    if(ball.ballPosition.x + ball.ballDiameter < this.bottomPosition.x && nextBallPosition.x + ball.ballDiameter > this.bottomPosition.x || 
-       ball.ballPosition.x - ball.ballDiameter > this.bottomPosition.x && nextBallPosition.x - ball.ballDiameter < this.bottomPosition.x
-      ){
+  checkIfBallHitWallMovingLeft(ball, nextBallPosition){
+    if(ball.ballPosition.x - (ball.ballDiameter / 2) > this.bottomPosition.x && nextBallPosition.x - (ball.ballDiameter / 2) < this.bottomPosition.x &&
+      nextBallPosition.x - (ball.ballDiameter / 2) > 0
+       ){
         return true;
     }else{
       return false;
     }
+  }
+  
+  checkIfBallHitWallMovingRight(ball, nextBallPosition){
+    if(ball.ballPosition.x + (ball.ballDiameter / 2) < this.bottomPosition.x && nextBallPosition.x + (ball.ballDiameter / 2) > this.bottomPosition.x &&
+      nextBallPosition.x + (ball.ballDiameter / 2) < 1){
+        return true;
+    }else{
+      return false;
+    }
+  }
+
+  checkIfBallCollideWallLeft(ball){
+    if((ball.ballPosition.x - (ball.ballDiameter / 2) <= this.prevPosition.x && ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x) ||
+       (ball.ballPosition.x - (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x) &&
+      ball.ballVelocity < 0){
+      return true;
+    }else{
+      return false;
+    }    
+  }
+  
+  checkIfBallCollideWallRight(ball){
+    if((ball.ballPosition.x + (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) >= this.bottomPosition.x) ||
+       (ball.ballPosition.x + (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) <= this.bottomPosition.x) &&
+     ball.ballVelocity > 0){
+      return true;
+    }else{
+      return false;
+    }    
   }
 
   doMovement(){
@@ -298,10 +329,12 @@ class ball{
       this.addFloorVelocity = {x: 0, y: 0};
       this.bounce = true;
       this.bounceFric = false;
+      this.emobalizeBall = {left: false, right: false};
   }
 
   moveHorizontally(nextXPosition){
-    if(keyIsDown(LEFT_ARROW)){
+    if(keyIsDown(LEFT_ARROW) && !this.emobalizeBall.left){
+      this.emobalizeBall.right = false;
 
       if(this.ballVelocity.x > -maxMoveSpeed){
         this.ballVelocity.x -= ballAcc;
@@ -311,7 +344,8 @@ class ball{
         this.ballVelocity.x -= ballAcc;
       }
 
-    }else if(keyIsDown(RIGHT_ARROW)){
+    }else if(keyIsDown(RIGHT_ARROW) && !this.emobalizeBall.right){
+      this.emobalizeBall.left = false;
 
       if(this.ballVelocity.x < maxMoveSpeed){
         this.ballVelocity.x += ballAcc;
@@ -376,8 +410,19 @@ class ball{
       nextBallPosition.y += floorVelocity.y;
 
       if(this.onFloor.hasWall){
-        if(this.onFloor.hasWall.checkIfBallHitWall(this, nextBallPosition)){
-          nextBallPosition.x = this.onFloor.hasWall.bottomPosition.x - this.ballDiameter;
+        console.log("Checking...")
+        if(this.onFloor.hasWall.checkIfBallHitWallMovingRight(this, nextBallPosition) || this.onFloor.hasWall.checkIfBallCollideWallRight(this)){
+          console.log("hit right side of wall")
+          nextBallPosition.x = this.onFloor.hasWall.bottomPosition.x - (this.ballDiameter / 2) - .0025;
+          this.emobalizeBall.right = true;
+          this.emobalizeBall.left = false;
+          this.ballVelocity.x = 0;
+        }else if(this.onFloor.hasWall.checkIfBallHitWallMovingLeft(this, nextBallPosition) || this.onFloor.hasWall.checkIfBallCollideWallLeft(this)){
+          console.log("hit left side of wall")
+          nextBallPosition.x = this.onFloor.hasWall.bottomPosition.x + (this.ballDiameter / 2) + .0025;
+          this.emobalizeBall.right = false;
+          this.emobalizeBall.left = true;
+          this.ballVelocity.x = 0;
         }
       }
       
@@ -526,7 +571,7 @@ function setup(){
   //Floor on right side that moves only vertically. Is created to test ball
   startPosition = {x: .8, y: heightOfGameScreen};
   floorVelocity = {x: 0, y: -.005};
-  beginNEndPosition = {begin: .2, end: heightOfGameScreen};
+  beginNEndPosition = {begin: 0, end: heightOfGameScreen};
   moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
   floors.push(new floor(startPosition, .2, moveVars, function(){
     
@@ -537,17 +582,43 @@ function setup(){
     }
 
   }));
-
-  let positionOnFloor = .75
-  let onFloor = floors[2];
+  
+  let positionOnFloor = 1
+  let onFloor = floors[0];
   let bottomPosition = {x: onFloor.length * positionOnFloor, y: onFloor.startPosition.y}
   let height = wallHeight;
   walls.push(new wall(bottomPosition, height, onFloor, function(){
+    this.repositionWall();
+  }));
+  floors[0].hasWall = walls[walls.length - 1];
+  /*
+  positionOnFloor = .25
+  onFloor = floors[1];
+  bottomPosition = {x: onFloor.length * positionOnFloor, y: onFloor.startPosition.y}
+  height = wallHeight;
+  walls.push(new wall(bottomPosition, height, onFloor, function(){
+    this.repositionWall();
+  }));
+  floors[1].hasWall = walls[walls.length - 1];
 
-    this.respositionWall();
-
+  positionOnFloor = .50
+  onFloor = floors[2];
+  bottomPosition = {x: onFloor.length * positionOnFloor, y: onFloor.startPosition.y}
+  height = wallHeight;
+  walls.push(new wall(bottomPosition, height, onFloor, function(){
+    this.repositionWall();
   }));
   floors[2].hasWall = walls[walls.length - 1];
+  
+  positionOnFloor = .75
+  onFloor = floors[3];
+  bottomPosition = {x: onFloor.length * positionOnFloor, y: onFloor.startPosition.y}
+  height = wallHeight;
+  walls.push(new wall(bottomPosition, height, onFloor, function(){
+    this.repositionWall();
+  }));
+  floors[3].hasWall = walls[walls.length - 1];
+  //*/
 }
 
 draw = function(){
