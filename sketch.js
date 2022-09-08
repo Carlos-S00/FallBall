@@ -12,13 +12,14 @@ let backgroundImageCopy;
 let gameScreenImage;
 let aspectRatio = 3/4;
 let heightOfGameScreen;
+let extraScroll = 0;
 
 let ballImage;
 let ballStartPosition = {x: .025, y: .05};
 let gameBallRatio = .05; // Should this be called ballDiameter instead?
 let ballAcc = .00015;
 let gravity = .0006;
-let maxFallSpeed = .0175;
+let maxFallSpeed = 1 //.0175;
 let maxMoveSpeed = .006;
 let ballFric = .97;
 let airFric = .99;
@@ -43,7 +44,6 @@ function onWindowResize() {
   game.drawRainbowCanvas(); //Redraw the rainbow background canvas
   //Anything else you'd want to do...
 }
-
 
 class gameSystem{
   constructor(aspectRatio){
@@ -128,7 +128,7 @@ class gameSystem{
 
   displayWall(wall){
     let bottomPosition = g.c(wall.bottomPosition);
-    let topPosition = {x: wall.bottomPosition.x, y: wall.bottomPosition.y + wall.length}
+    let topPosition = {x: wall.bottomPosition.x, y: wall.bottomPosition.y + wall.height}
     topPosition = g.c(topPosition);
 
     erase();
@@ -205,11 +205,6 @@ class floor{
     }
   }
 
-  doMovement(){
-    this.prevPosition = {x: this.startPosition.x, y:this.startPosition.y};
-    this.moveFunc();
-  }
-
   setBallOnFloor(ball){
     this.ball = ball;
     ball.onFloor = this;
@@ -244,22 +239,34 @@ class floor{
       return false;
     }
   }
+
+  doMovement(){
+    this.prevPosition = {x: this.startPosition.x, y: this.startPosition.y};
+    this.moveFunc();
+  }
 }
 
-
 class wall{
-  constructor(bottomPosition, length, onFloor, moveFunc){
+  constructor(bottomPosition, height, moveVars, moveFunc){
     this.bottomPosition = {x: bottomPosition.x, y: bottomPosition.y};
-    this.length = length;
-    this.onFloor = onFloor;
+    this.height = height;
     this.moveFunc = moveFunc;
+    if(moveVars){
+      this.moveVars = moveVars;
+    }else{
+      this.moveVars = false;
+    }
     this.prevPosition = false;
   }
 
-  repositionWall(){
-    this.prevPosition = {x: this.bottomPosition.x, y: this.bottomPosition.y};
-    this.bottomPosition.x +=  this.onFloor.startPosition.x - this.onFloor.prevPosition.x;
-    this.bottomPosition.y += this.onFloor.startPosition.y - this.onFloor.prevPosition.y;
+  moveVertically(){
+    this.bottomPosition.y += this.moveVars.wallVelocity.y;
+  }
+
+  moveHorizontally(){
+    if(this.moveVars.wallVelocity.x != 0){
+      this.bottomPosition.x += this.moveVars.wallVelocity.x
+    }
   }
   
   checkIfBallHitWallMovingLeft(ball, nextBallPosition){
@@ -282,9 +289,9 @@ class wall{
   }
 
   checkIfBallCollideWallLeft(ball){
-    if((ball.ballPosition.x - (ball.ballDiameter / 2) <= this.prevPosition.x && ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x) ||
-       (ball.ballPosition.x - (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x) &&
-      ball.ballVelocity < 0){
+    if(((ball.ballPosition.x - (ball.ballDiameter / 2) <= this.prevPosition.x && this.bottomPosition.x - this.prevPosition.x < 0)  || 
+       (ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x && this.bottomPosition.x - this.prevPosition.x > 0)) &&
+       ball.ballVelocity < 0){
       return true;
     }else{
       return false;
@@ -292,8 +299,8 @@ class wall{
   }
   
   checkIfBallCollideWallRight(ball){
-    if((ball.ballPosition.x + (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) >= this.bottomPosition.x) ||
-       (ball.ballPosition.x + (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) <= this.bottomPosition.x) &&
+    if(((ball.ballPosition.x + (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) >= this.bottomPosition.x) ||
+       (ball.ballPosition.x + (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) <= this.bottomPosition.x)) &&
      ball.ballVelocity > 0){
       return true;
     }else{
@@ -302,6 +309,7 @@ class wall{
   }
 
   doMovement(){
+    this.prevPosition = {x: this.bottomPosition.x, y: this.bottomPosition.y};
     this.moveFunc();
   }
 }
@@ -319,6 +327,7 @@ class wall{
     When resting on flat ground, set bool to true
 
 //*/
+
 class ball{
   constructor(ballDiameter, ballPosition){
       this.ballDiameter = ballDiameter;
@@ -408,7 +417,7 @@ class ball{
       let floorVelocity = {x: this.onFloor.startPosition.x - this.onFloor.prevPosition.x, y: this.onFloor.startPosition.y - this.onFloor.prevPosition.y};
       nextBallPosition.x += floorVelocity.x;
       nextBallPosition.y += floorVelocity.y;
-
+      /*
       if(this.onFloor.hasWall){
         console.log("Checking...")
         if(this.onFloor.hasWall.checkIfBallHitWallMovingRight(this, nextBallPosition) || this.onFloor.hasWall.checkIfBallCollideWallRight(this)){
@@ -425,7 +434,7 @@ class ball{
           this.ballVelocity.x = 0;
         }
       }
-      
+      //*/
       if(!this.onFloor.checkIfBallHitFloor(this, nextBallPosition)){
         this.ballVelocity.x += floorVelocity.x;
         this.ballVelocity.y += floorVelocity.y;
@@ -438,12 +447,14 @@ class ball{
       for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
         if(floors[floorIndex].checkIfBallHitFloor(this, nextBallPosition) || floors[floorIndex].checkIfBallCollideFloor(this)){
           let floorVelocity = {x: floors[floorIndex].startPosition.x - floors[floorIndex].prevPosition.x, y: floors[floorIndex].startPosition.y - floors[floorIndex].prevPosition.y};
-          let relativeVal = (this.ballVelocity.y - floorVelocity.y);
-          let absoluteVal = -relativeVal + floorVelocity.y;
-          if(absoluteVal * .75 < -.01){
+          let relativeVal = {x: this.ballVelocity.x - floorVelocity.x, y: this.ballVelocity.y - floorVelocity.y};
+          let absoluteVal = -relativeVal.y + floorVelocity.y;
+          if(relativeVal.y > .006){
             nextBallPosition.y = floors[floorIndex].startPosition.y - (this.ballDiameter / 2) - .0025;
-            this.ballVelocity.y = (absoluteVal) * ((keyIsDown(UP_ARROW) && this.bounce) ? .8 : .65);     
+            this.ballVelocity.y = (absoluteVal) * ((keyIsDown(UP_ARROW) && this.bounce) ? 1.1 : .5);
             nextBallPosition.y += this.ballVelocity.y;
+            this.ballVelocity.x = floorVelocity.x + (relativeVal.x * .5);
+            nextBallPosition.x += this.ballVelocity.x;
             this.bounce = false;
           }else{
             floors[floorIndex].setBallOnFloor(this);
@@ -453,7 +464,32 @@ class ball{
           break;
         }
       }
+    }else{
+      for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+        if(floors[floorIndex].checkIfBallCollideFloor(this)){
+          floors[floorIndex].setBallOnFloor(this);
+          nextBallPosition.y = this.ballPosition.y;
+          this.bounce = true;
+        }
+      }
     }
+    
+    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
+      if(walls[wallIndex].checkIfBallHitWallMovingRight(this, nextBallPosition) || walls[wallIndex].checkIfBallCollideWallRight(this)){
+        console.log("hit right side of wall")
+        nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2) - .0025;
+        this.emobalizeBall.right = true;
+        this.emobalizeBall.left = false;
+        this.ballVelocity.x = 0;
+      }else if(walls[wallIndex].checkIfBallHitWallMovingLeft(this, nextBallPosition) || walls[wallIndex].checkIfBallCollideWallLeft(this)){
+        console.log("hit left side of wall")
+        nextBallPosition.x = walls[wallIndex].bottomPosition.x + (this.ballDiameter / 2) + .0025;
+        this.emobalizeBall.right = false;
+        this.emobalizeBall.left = true;
+        this.ballVelocity.x = 0;
+      }      
+    }
+
     //console.log(this.onFloor ? "on Floor" : "Not on Floor")
     this.ballPosition.x = nextBallPosition.x;
     this.ballPosition.y = nextBallPosition.y;
@@ -512,13 +548,14 @@ function setup(){
 
   gameBall = new ball(gameBallRatio, ballStartPosition);
 
+  // Make function a function object to pass in with wall as well. Need to reconstruct allllll objects
   //Floor moving up, down, left, and right. Contains a beginning and end position. Stays in the game screen
   let startPosition = {x: 0, y: heightOfGameScreen};
   let floorVelocity = {x: 0.005, y: -.001};
   let beginNEndPosition = {begin: 0.2, end: .8};
+  let floorLength = .2;
   let moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
-  floors.push(new floor(startPosition, .2, moveVars, function(){
-    
+  let insideMoveFun = function(){
     this.moveVertically();
 
     this.moveHorizontally();
@@ -536,16 +573,41 @@ function setup(){
         this.moveVars.floorVelocity.x *= -1;
       }
     }
+  }
+  floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+  
+  let bottomPosition = {x: 0, y: heightOfGameScreen};
+  wallVelocity = {x: 0.005, y: -.001};
+  beginNEndPosition = {begin: 0.2, end: .8};
+  moveVars = {wallVelocity: wallVelocity, beginNEndPosition: beginNEndPosition};
+  let height = wallHeight;
+  insideMoveFun = function(){
+    this.moveVertically();
 
-  }));
+    this.moveHorizontally();
+
+    if(this.bottomPosition.y < 0 || this.bottomPosition.y > heightOfGameScreen){
+      this.moveVars.wallVelocity.y *= -1;
+    }
+
+    if(this.moveVars.wallVelocity.x > 0){
+      if(this.bottomPosition.x + floorLength > this.moveVars.beginNEndPosition.end){ // If condition checks using the right edge of line
+        this.moveVars.wallVelocity.x *= -1;
+      }
+    }else if(this.moveVars.wallVelocity.x < 0){
+      if(this.bottomPosition.x < this.moveVars.beginNEndPosition.begin){ // If condition checks using the left edge of line
+        this.moveVars.wallVelocity.x *= -1;
+      }
+    }
+  }
+  walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
 
   //Floor moving only left and right with a beginning and end position
-  startPosition = {x: .2, y: heightOfGameScreen / 2};
+  startPosition = {x: 0, y: heightOfGameScreen / 2};
   floorVelocity = {x: 0.005, y: 0};
   beginNEndPosition = {begin: 0.2, end: .8};
   moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
-  floors.push(new floor(startPosition, .2, moveVars, function(){
-
+  insideMoveFun = function(){
     this.moveHorizontally();
 
     if(this.moveVars.floorVelocity.x > 0){
@@ -559,38 +621,35 @@ function setup(){
         this.startPosition.x = this.moveVars.beginNEndPosition.begin + (this.moveVars.beginNEndPosition.begin - this.startPosition.x);
       }
     }
-  }));
+  }
+  floors.push(new floor(startPosition, .2, moveVars, insideMoveFun));
 
   //Floor on top left corner to test ball
-  startPosition = {x: 0, y: .2};
+  startPosition = {x: .2, y: .2};
   floorVelocity = {x: 0, y: 0};
   beginNEndPosition = false;
   moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
-  floors.push(new floor(startPosition, .8, moveVars, function(){}));
+  insideMoveFun = function(){}
+  floors.push(new floor(startPosition, .6, moveVars, insideMoveFun));
 
   //Floor on right side that moves only vertically. Is created to test ball
   startPosition = {x: .8, y: heightOfGameScreen};
   floorVelocity = {x: 0, y: -.005};
   beginNEndPosition = {begin: 0, end: heightOfGameScreen};
   moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
-  floors.push(new floor(startPosition, .2, moveVars, function(){
-    
+  insideMoveFun = function(){
     this.moveVertically();
 
     if(this.startPosition.y < this.moveVars.beginNEndPosition.begin || this.startPosition.y > this.moveVars.beginNEndPosition.end){
       this.moveVars.floorVelocity.y *= -1;
     }
-
-  }));
+  }
+  floors.push(new floor(startPosition, .2, moveVars, insideMoveFun));
   
-  let positionOnFloor = 1
-  let onFloor = floors[0];
-  let bottomPosition = {x: onFloor.length * positionOnFloor, y: onFloor.startPosition.y}
-  let height = wallHeight;
-  walls.push(new wall(bottomPosition, height, onFloor, function(){
-    this.repositionWall();
-  }));
-  floors[0].hasWall = walls[walls.length - 1];
+  // Floors and walls must be separate from each other
+
+
+
   /*
   positionOnFloor = .25
   onFloor = floors[1];
