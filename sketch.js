@@ -167,7 +167,7 @@ class gameSystem{
     resetMatrix();
     
     if(ball.bounceEffect){
-      strokeWeight(ball.bounceEffect.val/15);
+      strokeWeight(ball.bounceEffect.duration/15);
       ball.bounceEffect.particles.forEach((particle, ind, arr) => {
         let partPos = g.c(particle.position);
         let partVel = {x: this.perToPx(particle.velocity.x), y: this.perToPx(particle.velocity.y)};
@@ -178,9 +178,9 @@ class gameSystem{
         arr[ind].velocity.y += 0.00015;
       });
       //let effectPos = g.c(ball.bounceEffect.position);
-      //ellipse(effectPos.x, effectPos.y - 20 + ball.bounceEffect.val, ballDiameter+1 + 20 - ball.bounceEffect.val, ballDiameter+1 + 20 - ball.bounceEffect.val * 2);
-      ball.bounceEffect.val -= 1;
-      if(ball.bounceEffect.val == 0){
+      //ellipse(effectPos.x, effectPos.y - 20 + ball.bounceEffect.duration, ballDiameter+1 + 20 - ball.bounceEffect.duration, ballDiameter+1 + 20 - ball.bounceEffect.duration * 2);
+      ball.bounceEffect.duration -= 1;
+      if(ball.bounceEffect.duration == 0){
         ball.bounceEffect = false;
       }
     }
@@ -490,6 +490,16 @@ class ball{
     return nextYPosition;
   }
 
+  playBounceEffect(duration, numParticles, strength, position, scale){
+    let particles = [];
+    for(var i = 0; i < numParticles; i++){
+      particles.push({position: {x: position.x, y: position.y}, 
+                      velocity: {x: (Math.random() - 0.5) * strength * scale.x, y: Math.random() * strength * scale.y},
+                      color: {r: Math.random() * 135 + 120, g: Math.random() * 135 + 120, b: Math.random() * 135 + 120}});
+    }
+    this.bounceEffect = {particles: particles, duration: duration};
+  }
+
   bounceOnFloor(floor, nextBallPosition){
     let floorVelocity = {x: floor.startPosition.x - floor.prevPosition.x, y: floor.startPosition.y - floor.prevPosition.y};
     let relativeVal = {x: this.ballVelocity.x - floorVelocity.x, y: this.ballVelocity.y - floorVelocity.y};
@@ -498,13 +508,7 @@ class ball{
       nextBallPosition.y = floor.startPosition.y - (this.ballDiameter / 2) - .0025;
       this.ballVelocity.y = (absoluteVal) * ((keyIsDown(UP_ARROW) && this.bounce) ? 1.1 : .5);
       if(keyIsDown(UP_ARROW) && this.bounce){
-        let particles = [];
-        for(var i = 0; i < 20; i++){
-          particles.push({position: {x: nextBallPosition.x, y: floor.startPosition.y}, 
-                          velocity: {x: (Math.random() - 0.5) * relativeVal.y * 0.5, y: Math.random() * -relativeVal.y * 0.3},
-                          color: {r: Math.random() * 135 + 120, g: Math.random() * 135 + 120, b: Math.random() * 135 + 120}});
-        }
-        this.bounceEffect = {particles: particles, val: 60};
+        this.playBounceEffect(60, 20, relativeVal.y, {x: nextBallPosition.x, y: floor.startPosition.y}, {x: 0.5, y: -0.3})
       }
       nextBallPosition.y += this.ballVelocity.y;
       this.ballVelocity.x = floorVelocity.x + (relativeVal.x * .5);
