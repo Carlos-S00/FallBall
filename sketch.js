@@ -15,7 +15,7 @@ let heightOfGameScreen;
 let extraScroll = 0;
 
 let ballImage;
-let ballStartPosition = {x: .025, y: .05};
+let ballStartPosition = {x: .5, y: .05};
 let gameBallRatio = .05; // Should this be called ballDiameter instead?
 let ballAcc = .00015;
 let gravity = .0006;
@@ -153,7 +153,38 @@ class gameSystem{
     translate(position.x, position.y);
     rotate(ball.rotation);
     image(ballImage, -(ballDiameter / 2), -(ballDiameter / 2), ballDiameter, ballDiameter);
+    stroke(255,255,0);
+    strokeWeight(2);
+    noFill();
+    if(ball.bounce){
+      ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
+      if(ball.justGotBounce > 1){
+        ball.justGotBounce /= 1.17;
+      } else {
+        ball.justGotBounce = 0;
+      }
+    }
     resetMatrix();
+    
+    if(ball.bounceEffect){
+      strokeWeight(ball.bounceEffect.val/15);
+      ball.bounceEffect.particles.forEach((particle, ind, arr) => {
+        let partPos = g.c(particle.position);
+        let partVel = {x: this.perToPx(particle.velocity.x), y: this.perToPx(particle.velocity.y)};
+        stroke(particle.color.r, particle.color.g, particle.color.b);
+        line(partPos.x, partPos.y, partPos.x + partVel.x, partPos.y + partVel.y);
+        arr[ind].position.x += particle.velocity.x;
+        arr[ind].position.y += particle.velocity.y;
+        arr[ind].velocity.y += 0.00015;
+      });
+      //let effectPos = g.c(ball.bounceEffect.position);
+      //ellipse(effectPos.x, effectPos.y - 20 + ball.bounceEffect.val, ballDiameter+1 + 20 - ball.bounceEffect.val, ballDiameter+1 + 20 - ball.bounceEffect.val * 2);
+      ball.bounceEffect.val -= 1;
+      if(ball.bounceEffect.val == 0){
+        ball.bounceEffect = false;
+      }
+    }
+    strokeWeight(1);
 
     if(position.x - (ballDiameter / 2) < this.position.startX){
       translate(this.position.endX + (position.x -  this.position.startX), position.y);
@@ -215,7 +246,7 @@ class floor{
   checkIfBallHitFloor(ball, nextBallPosition){
     if(nextBallPosition.x >= this.startPosition.x && nextBallPosition.x <= this.startPosition.x + this.length){
       if(ball.onFloor != this){
-        if(ball.ballPosition.y  + (ball.ballDiameter / 2) <= this.startPosition.y && nextBallPosition.y + (ball.ballDiameter / 2) >= this.startPosition.y){
+        if(ball.ballPosition.y  + (ball.ballDiameter / 2) <= this.prevPosition.y && nextBallPosition.y + (ball.ballDiameter / 2) >= this.startPosition.y){
           return true;
         }else{
           return false;
@@ -228,8 +259,9 @@ class floor{
     }
   }
 
-  checkIfBallCollideFloor(ball){
-    if(ball.ballPosition.x >= this.startPosition.x && ball.ballPosition.x <= this.startPosition.x + this.length){
+  //Unused unneeded
+  checkIfBallCollideFloor(ball, nextBallPosition){
+    if(nextBallPosition.x >= this.startPosition.x && nextBallPosition.x <= this.startPosition.x + this.length){
       if(ball.ballPosition.y + (ball.ballDiameter / 2) <= this.prevPosition.y && ball.ballPosition.y + (ball.ballDiameter / 2) >= this.startPosition.y){
         return true;
       }else{
@@ -380,11 +412,13 @@ class wall{
 class ball{
   constructor(ballDiameter, ballPosition){
       this.ballDiameter = ballDiameter;
+      this.prevPosition = {x: ballPosition.x, y: ballPosition.y};
       this.ballPosition = {x: ballPosition.x, y: ballPosition.y};
       this.ballVelocity = {x: 0, y: 0};
       this.onFloor = false;
       this.rotation = 0;
       this.addFloorVelocity = {x: 0, y: 0};
+      this.justGotBounce = 0;
       this.bounce = true;
       this.bounceFric = false;
       this.emobalizeBall = {left: false, right: false};
@@ -433,7 +467,6 @@ class ball{
       }
     }
 
-    this.rotation += ((40 * (this.ballVelocity.x)) / (PI * this.ballDiameter)) * 2 * PI;
     nextXPosition += this.ballVelocity.x;
 
     return this.ifBallOutOfGame(nextXPosition);
@@ -455,6 +488,34 @@ class ball{
       nextYPosition += this.ballVelocity.y;
     }
     return nextYPosition;
+  }
+
+  bounceOnFloor(floor, nextBallPosition){
+    let floorVelocity = {x: floor.startPosition.x - floor.prevPosition.x, y: floor.startPosition.y - floor.prevPosition.y};
+    let relativeVal = {x: this.ballVelocity.x - floorVelocity.x, y: this.ballVelocity.y - floorVelocity.y};
+    let absoluteVal = -relativeVal.y + floorVelocity.y;
+    if(relativeVal.y > .009){
+      nextBallPosition.y = floor.startPosition.y - (this.ballDiameter / 2) - .0025;
+      this.ballVelocity.y = (absoluteVal) * ((keyIsDown(UP_ARROW) && this.bounce) ? 1.1 : .5);
+      if(keyIsDown(UP_ARROW) && this.bounce){
+        let particles = [];
+        for(var i = 0; i < 20; i++){
+          particles.push({position: {x: nextBallPosition.x, y: floor.startPosition.y}, 
+                          velocity: {x: (Math.random() - 0.5) * relativeVal.y * 0.5, y: Math.random() * -relativeVal.y * 0.3},
+                          color: {r: Math.random() * 135 + 120, g: Math.random() * 135 + 120, b: Math.random() * 135 + 120}});
+        }
+        this.bounceEffect = {particles: particles, val: 60};
+      }
+      nextBallPosition.y += this.ballVelocity.y;
+      this.ballVelocity.x = floorVelocity.x + (relativeVal.x * .5);
+      nextBallPosition.x += this.ballVelocity.x;
+      this.bounce = false;
+    }else{
+      floor.setBallOnFloor(this);
+      nextBallPosition.y = this.ballPosition.y;
+      this.bounce = true;
+      this.justGotBounce = 80;
+    }
   }
 
   doMovement(floors){
@@ -493,28 +554,28 @@ class ball{
     }
     // this.ballVelocity.y > maxFallSpeed * (3/5)
     if(!this.onFloor){
+      let hitFloors = [];
       for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
-        if(floors[floorIndex].checkIfBallHitFloor(this, nextBallPosition) || floors[floorIndex].checkIfBallCollideFloor(this)){
-          let floorVelocity = {x: floors[floorIndex].startPosition.x - floors[floorIndex].prevPosition.x, y: floors[floorIndex].startPosition.y - floors[floorIndex].prevPosition.y};
-          let relativeVal = {x: this.ballVelocity.x - floorVelocity.x, y: this.ballVelocity.y - floorVelocity.y};
-          let absoluteVal = -relativeVal.y + floorVelocity.y;
-          if(relativeVal.y > .006){
-            nextBallPosition.y = floors[floorIndex].startPosition.y - (this.ballDiameter / 2) - .0025;
-            this.ballVelocity.y = (absoluteVal) * ((keyIsDown(UP_ARROW) && this.bounce) ? 1.1 : .5);
-            nextBallPosition.y += this.ballVelocity.y;
-            this.ballVelocity.x = floorVelocity.x + (relativeVal.x * .5);
-            nextBallPosition.x += this.ballVelocity.x;
-            this.bounce = false;
-          }else{
-            floors[floorIndex].setBallOnFloor(this);
-            nextBallPosition.y = this.ballPosition.y;
-            this.bounce = true;
-          }
-          break;
+        if(floors[floorIndex].checkIfBallHitFloor(this, nextBallPosition)){// || floors[floorIndex].checkIfBallCollideFloor(this, nextBallPosition)){
+          hitFloors.push(floors[floorIndex]);
         }
+      }
+      if(hitFloors[0]){
+        console.log("Hit a floor");
+        let highestFloor = hitFloors[0];
+        for(let floorIndex = 1; floorIndex < hitFloors.length; floorIndex++){
+          if(hitFloors[floorIndex].startPosition.y < highestFloor.startPosition.y){
+            highestFloor = hitFloors[floorIndex];
+          }
+        }
+        this.bounceOnFloor(highestFloor, nextBallPosition);
       }
     }
     
+    this.prevPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
+    this.ballPosition.x = nextBallPosition.x;
+    this.ballPosition.y = nextBallPosition.y;
+
     for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
       if(walls[wallIndex].checkIfBallHitWallMovingRight(this, nextBallPosition)){
         console.log("hit right side of wall")
@@ -532,9 +593,7 @@ class ball{
     }
 
     //console.log(this.onFloor ? "on Floor" : "Not on Floor")
-    this.ballPosition.x = nextBallPosition.x;
-    this.ballPosition.y = nextBallPosition.y;
-    
+    /*
     for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
       if(walls[wallIndex].checkIfBallCollideWallRight(this)){
         console.log("Collided right side of wall")
@@ -550,6 +609,8 @@ class ball{
         this.ballVelocity.x = 0;
       }      
     }
+    */
+    this.rotation += ((40 * (this.ballPosition.x - this.prevPosition.x)) / (PI * this.ballDiameter)) * 2 * PI;
   }
 }
 
