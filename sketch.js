@@ -240,9 +240,42 @@ class floor{
     }
   }
 
+  isSlowerFloor(ball, newFloor){
+    if(ball.ballPosition.x >= newFloor.startPosition.x && ball.ballPosition.x <= newFloor.startPosition.x + newFloor.length && this != newFloor){
+      if(newFloor.prevPosition.y > this.prevPosition.y && newFloor.startPosition.y < this.startPosition.y){
+        return true;
+      }else{
+        return false;
+      }
+    }else{
+      return false;
+    }
+  }
+
   doMovement(){
     this.prevPosition = {x: this.startPosition.x, y: this.startPosition.y};
     this.moveFunc();
+
+    /*
+    1) NewFloor is moving up relative to the current floor 
+    2) Ball is within the X value within the newfloor 
+    3) NewFloor crosses the Y value of the current floor Y
+
+    1 & 3) Before position of NewFloor is below Before position of CurrentFloor and After position of NewFloor is above After position of CurrentFloor
+    2)
+
+    Make function with these conditions. Call it here. Pass the ball
+
+
+    Before position of
+    After position of
+    CurrentFloor
+    NewFloor
+    is below
+    is above
+    and
+    or
+    //*/
   }
 }
 
@@ -270,42 +303,58 @@ class wall{
   }
   
   checkIfBallHitWallMovingLeft(ball, nextBallPosition){
-    if(ball.ballPosition.x - (ball.ballDiameter / 2) > this.bottomPosition.x && nextBallPosition.x - (ball.ballDiameter / 2) < this.bottomPosition.x &&
-      nextBallPosition.x - (ball.ballDiameter / 2) > 0
-       ){
-        return true;
+    if(nextBallPosition.y <= this.bottomPosition.y && nextBallPosition.y >= this.bottomPosition.y + this.height){
+      if(ball.ballPosition.x - (ball.ballDiameter / 2) > this.bottomPosition.x && nextBallPosition.x - (ball.ballDiameter / 2) < this.bottomPosition.x &&
+        nextBallPosition.x - (ball.ballDiameter / 2) > 0
+        ){
+          return true;
+      }else{
+        return false;
+      }
     }else{
       return false;
     }
   }
   
   checkIfBallHitWallMovingRight(ball, nextBallPosition){
-    if(ball.ballPosition.x + (ball.ballDiameter / 2) < this.bottomPosition.x && nextBallPosition.x + (ball.ballDiameter / 2) > this.bottomPosition.x &&
-      nextBallPosition.x + (ball.ballDiameter / 2) < 1){
-        return true;
+    if(nextBallPosition.y <= this.bottomPosition.y && nextBallPosition.y >= this.bottomPosition.y + this.height){
+      if(ball.ballPosition.x + (ball.ballDiameter / 2) < this.bottomPosition.x && nextBallPosition.x + (ball.ballDiameter / 2) > this.bottomPosition.x &&
+        nextBallPosition.x + (ball.ballDiameter / 2) < 1){
+          return true;
+      }else{
+        return false;
+      }
     }else{
       return false;
     }
   }
 
   checkIfBallCollideWallLeft(ball){
-    if(((ball.ballPosition.x - (ball.ballDiameter / 2) <= this.prevPosition.x && this.bottomPosition.x - this.prevPosition.x < 0)  || 
-       (ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x && this.bottomPosition.x - this.prevPosition.x > 0)) &&
-       ball.ballVelocity < 0){
-      return true;
+    if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y >= this.bottomPosition.y + this.height){
+      if(((ball.ballPosition.x - (ball.ballDiameter / 2) <= this.prevPosition.x && this.bottomPosition.x - this.prevPosition.x < 0)  || 
+        (ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x && this.bottomPosition.x - this.prevPosition.x > 0)) &&
+        ball.ballVelocity < 0){
+        return true;
+      }else{
+        return false;
+      }
     }else{
       return false;
-    }    
+    }
   }
   
   checkIfBallCollideWallRight(ball){
-    if(((ball.ballPosition.x + (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) >= this.bottomPosition.x) ||
-       (ball.ballPosition.x + (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) <= this.bottomPosition.x)) &&
-     ball.ballVelocity > 0){
-      return true;
+    if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y >= this.bottomPosition.y + this.height){
+      if(((ball.ballPosition.x + (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) >= this.bottomPosition.x) ||
+        (ball.ballPosition.x + (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) <= this.bottomPosition.x)) &&
+      ball.ballVelocity > 0){
+        return true;
+      }else{
+        return false;
+      }
     }else{
       return false;
-    }    
+    }
   }
 
   doMovement(){
@@ -464,35 +513,43 @@ class ball{
           break;
         }
       }
-    }else{
-      for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
-        if(floors[floorIndex].checkIfBallCollideFloor(this)){
-          floors[floorIndex].setBallOnFloor(this);
-          nextBallPosition.y = this.ballPosition.y;
-          this.bounce = true;
-        }
-      }
     }
     
     for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
-      if(walls[wallIndex].checkIfBallHitWallMovingRight(this, nextBallPosition) || walls[wallIndex].checkIfBallCollideWallRight(this)){
+      if(walls[wallIndex].checkIfBallHitWallMovingRight(this, nextBallPosition)){
         console.log("hit right side of wall")
         nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2) - .0025;
         this.emobalizeBall.right = true;
         this.emobalizeBall.left = false;
         this.ballVelocity.x = 0;
-      }else if(walls[wallIndex].checkIfBallHitWallMovingLeft(this, nextBallPosition) || walls[wallIndex].checkIfBallCollideWallLeft(this)){
+      }else if(walls[wallIndex].checkIfBallHitWallMovingLeft(this, nextBallPosition)){
         console.log("hit left side of wall")
+        nextBallPosition.x = walls[wallIndex].bottomPosition.x + (this.ballDiameter / 2) + .0025;
+        this.emobalizeBall.right = false;
+        this.emobalizeBall.left = true;
+        this.ballVelocity.x = 0;
+      }
+    }
+
+    //console.log(this.onFloor ? "on Floor" : "Not on Floor")
+    this.ballPosition.x = nextBallPosition.x;
+    this.ballPosition.y = nextBallPosition.y;
+    
+    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
+      if(walls[wallIndex].checkIfBallCollideWallRight(this)){
+        console.log("Collided right side of wall")
+        nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2) - .0025;
+        this.emobalizeBall.right = true;
+        this.emobalizeBall.left = false;
+        this.ballVelocity.x = 0;
+      }else if(walls[wallIndex].checkIfBallCollideWallLeft(this)){
+        console.log("Collided left side of wall")
         nextBallPosition.x = walls[wallIndex].bottomPosition.x + (this.ballDiameter / 2) + .0025;
         this.emobalizeBall.right = false;
         this.emobalizeBall.left = true;
         this.ballVelocity.x = 0;
       }      
     }
-
-    //console.log(this.onFloor ? "on Floor" : "Not on Floor")
-    this.ballPosition.x = nextBallPosition.x;
-    this.ballPosition.y = nextBallPosition.y;
   }
 }
 
@@ -601,6 +658,32 @@ function setup(){
     }
   }
   walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+  
+  bottomPosition = {x: floorLength, y: heightOfGameScreen};
+  wallVelocity = {x: 0.005, y: -.001};
+  beginNEndPosition = {begin: floorLength + floorLength, end: .8};
+  moveVars = {wallVelocity: wallVelocity, beginNEndPosition: beginNEndPosition};
+  height = wallHeight;
+  insideMoveFun = function(){
+    this.moveVertically();
+
+    this.moveHorizontally();
+
+    if(this.bottomPosition.y < 0 || this.bottomPosition.y > heightOfGameScreen){
+      this.moveVars.wallVelocity.y *= -1;
+    }
+
+    if(this.moveVars.wallVelocity.x > 0){
+      if(this.bottomPosition.x > this.moveVars.beginNEndPosition.end){ // If condition checks using the right edge of line
+        this.moveVars.wallVelocity.x *= -1;
+      }
+    }else if(this.moveVars.wallVelocity.x < 0){
+      if(this.bottomPosition.x < this.moveVars.beginNEndPosition.begin){ // If condition checks using the left edge of line
+        this.moveVars.wallVelocity.x *= -1;
+      }
+    }
+  }
+  walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
 
   //Floor moving only left and right with a beginning and end position
   startPosition = {x: 0, y: heightOfGameScreen / 2};
@@ -631,6 +714,27 @@ function setup(){
   moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
   insideMoveFun = function(){}
   floors.push(new floor(startPosition, .6, moveVars, insideMoveFun));
+  
+  bottomPosition = {x: .2, y: .2};
+  wallVelocity = {x: 0.005, y: 0};
+  beginNEndPosition = {begin: 0, end: 1};
+  moveVars = {wallVelocity: wallVelocity, beginNEndPosition: beginNEndPosition};
+  height = wallHeight;
+  insideMoveFun = function(){
+
+    this.moveHorizontally();
+
+    if(this.moveVars.wallVelocity.x > 0){
+      if(this.bottomPosition.x > this.moveVars.beginNEndPosition.end){ // If condition checks using the right edge of line
+        this.moveVars.wallVelocity.x *= -1;
+      }
+    }else if(this.moveVars.wallVelocity.x < 0){
+      if(this.bottomPosition.x < this.moveVars.beginNEndPosition.begin){ // If condition checks using the left edge of line
+        this.moveVars.wallVelocity.x *= -1;
+      }
+    }
+  }
+  walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
 
   //Floor on right side that moves only vertically. Is created to test ball
   startPosition = {x: .8, y: heightOfGameScreen};
@@ -646,6 +750,19 @@ function setup(){
   }
   floors.push(new floor(startPosition, .2, moveVars, insideMoveFun));
   
+  //Floor on right side that moves only vertically. Is created to test ball
+  startPosition = {x: .8, y: 0};
+  floorVelocity = {x: 0, y: .005};
+  beginNEndPosition = {begin: 0, end: heightOfGameScreen};
+  moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
+  insideMoveFun = function(){
+    this.moveVertically();
+
+    if(this.startPosition.y < this.moveVars.beginNEndPosition.begin || this.startPosition.y > this.moveVars.beginNEndPosition.end){
+      this.moveVars.floorVelocity.y *= -1;
+    }
+  }
+  floors.push(new floor(startPosition, .2, moveVars, insideMoveFun));
   // Floors and walls must be separate from each other
 
 
@@ -689,8 +806,19 @@ draw = function(){
   game.displayGameScreen();
 
   for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
-    floors[floorIndex].doMovement();
+    floors[floorIndex].doMovement(gameBall);
     game.displayFloor(floors[floorIndex]);
+  }
+
+  if(gameBall.onFloor){
+    for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+      if(gameBall.onFloor.isSlowerFloor(gameBall, floors[floorIndex])){
+        gameBall.onFloor.ball = false;
+        floors[floorIndex].setBallOnFloor(gameBall);
+        gameBall.ballPosition.y -= floors[floorIndex].startPosition.y - floors[floorIndex].prevPosition.y;
+        this.bounce = true;
+      }
+    }
   }
 
   for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
