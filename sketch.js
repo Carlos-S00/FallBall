@@ -320,29 +320,66 @@ class wall{
       this.bottomPosition.x += this.moveVars.wallVelocity.x
     }
   }
-  
-  checkIfBallHitWallMovingLeft(prevPosition, ball){
-    if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y >= this.bottomPosition.y + this.height){
-      if(prevPosition.x + (ball.ballDiameter / 2) <= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) >= this.bottomPosition.x){
-          return true;
+
+  ballHitWallConditionleft(prevPosition, ball, sidePositionOfBall, condition){//prevPosition is being alter and is wrong here. (Adding ball diameter when already been considered)
+    if(condition == 0){
+      if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y >= this.bottomPosition.y + this.height){
+        if(prevPosition.x <= this.prevPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) >= this.bottomPosition.x){
+            return true;
+        }else{
+          return false;
+        }
       }else{
         return false;
       }
-    }else{
-      return false;
+    }else if(condition == 1){
+      if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y >= this.bottomPosition.y + this.height){
+        if(prevPosition.x >= this.prevPosition.x && sidePositionOfBall >= this.bottomPosition.x){
+            ball.ballPosition.x -= (sidePositionOfBall - this.bottomPosition.x);
+            return true;
+        }else{
+          return false;
+        }
+      }else{
+        return false;
+      }
+    }else if(condition == 2){
+
+    }else if(condition == 3){
+      
     }
+
   }
   
-  checkIfBallHitWallMovingRight(prevPosition, ball){
-    if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y >= this.bottomPosition.y + this.height){
-      if(prevPosition.x - (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x){
-          return true;
+  checkIfBallHitWallMovingLeft(prevPosition, ball, sidePositionsOfBall, condition){
+    let prevPositionHolder = prevPosition;
+      if(sidePositionsOfBall > 0){
+        sidePositionsOfBall -= 1; //.03
+        condition = 1;
+      }
+      
+      if(prevPosition.x + (ball.ballDiameter / 2) > 1){
+        prevPositionHolder.x = (prevPositionHolder.x + (ball.ballDiameter / 2)) - 1; //.03
+      if(condition == 1){
+        condition = 2;
+      }else{
+        condition = 3;
+      }
+    }
+
+    return this.ballHitWallConditionleft(prevPositionHolder, ball, sidePositionsOfBall, condition);
+  }
+  
+  checkIfBallHitWallMovingRight(prevPosition, ball, sidePositionsOfBall, condition){
+      if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y >= this.bottomPosition.y + this.height){
+        if(prevPosition.x - (ball.ballDiameter / 2) >= this.prevPosition.x && ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x){
+            return true;
+        }else{
+          return false;
+        }
       }else{
         return false;
       }
-    }else{
-      return false;
-    }
   }
 
   doMovement(){
@@ -473,7 +510,7 @@ class ball{
     }
   }
 
-  doMovement(floors){
+  doMovement(game, floors){
     let nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
     nextBallPosition.x = this.moveHorizontally(nextBallPosition.x);
     nextBallPosition.y = this.moveVertically(nextBallPosition.y);
@@ -515,15 +552,26 @@ class ball{
     this.ballPosition.x = nextBallPosition.x;
     this.ballPosition.y = nextBallPosition.y;
 
+    let condition = 0;
+    let sidePositionsOfBall = {left:0, right: 0};
+    if(this.ballPosition.x - (this.ballDiameter / 2) < 0){
+      sidePositionsOfBall.left = this.ballPosition.x - (this.ballDiameter / 2); 
+    }
+    if(this.ballPosition.x + (this.ballDiameter / 2) > 1){
+      sidePositionsOfBall.left = (this.ballPosition.x + (this.ballDiameter / 2)) - 1;
+    }
+
     for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){// add additonaball movement to totalBallRoll when hitting a floor
-      if(walls[wallIndex].checkIfBallHitWallMovingLeft(this.prevPosition, this)){
-        nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2) - .0025;
+      if(walls[wallIndex].checkIfBallHitWallMovingLeft(this.prevPosition, this, sidePositionsOfBall.right, condition)){
+        if(condition == 0){
+          nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2) - .0025;
+        }
         if(this.ballVelocity.x > 0){
-          this.ballVelocity.x = 0
+          this.ballVelocity.x = 0;
         }else{
           this.ballVelocity.x = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
         }
-      }else if(walls[wallIndex].checkIfBallHitWallMovingRight(this.prevPosition, this)){
+      }else if(walls[wallIndex].checkIfBallHitWallMovingRight(this.prevPosition, this, sidePositionsOfBall.left, condition)){
         nextBallPosition.x = walls[wallIndex].bottomPosition.x + (this.ballDiameter / 2) + .0025;
         if(this.ballVelocity.x < 0){
           this.ballVelocity.x = 0
@@ -750,7 +798,7 @@ function setup(){
   }
   floors.push(new floor(startPosition, .2, moveVars, insideMoveFun));
   
-  bottomPosition = {x: 0.0008, y: heightOfGameScreen};
+  bottomPosition = {x: 0.005, y: heightOfGameScreen};
   wallVelocity = {x: 0, y: 0};
   beginNEndPosition = {begin: 0, end: 0};
   moveVars = {wallVelocity: wallVelocity, beginNEndPosition: beginNEndPosition};
@@ -788,7 +836,7 @@ draw = function(){
     game.displayWall(walls[wallIndex]);
   }
 
-  gameBall.doMovement(floors);
+  gameBall.doMovement(game, floors);
   game.displayBall(gameBall);
 
   frame++;
