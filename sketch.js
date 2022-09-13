@@ -15,7 +15,7 @@ let heightOfGameScreen;
 let extraScroll = 0;
 
 let ballImage;
-let ballStartPosition = {x: .5, y: .05};
+let ballStartPosition = {x: .5, y: .3};
 let gameBallRatio = .05; // Should this be called ballDiameter instead?
 let ballAcc = .00015;
 let gravity = .0006;
@@ -526,6 +526,7 @@ class ball{
     let nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
     nextBallPosition.x = this.moveHorizontally(nextBallPosition.x);
     nextBallPosition.y = this.moveVertically(nextBallPosition.y);
+    let totalBallRoll = nextBallPosition.x - this.ballPosition.x;
 
     if(this.onFloor){
       let floorVelocity = {x: this.onFloor.startPosition.x - this.onFloor.prevPosition.x, y: this.onFloor.startPosition.y - this.onFloor.prevPosition.y};
@@ -556,7 +557,7 @@ class ball{
         this.onFloor = false;
       }
     }
-    // this.ballVelocity.y > maxFallSpeed * (3/5)
+
     if(!this.onFloor){
       let hitFloors = [];
       for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
@@ -580,7 +581,7 @@ class ball{
     this.ballPosition.x = nextBallPosition.x;
     this.ballPosition.y = nextBallPosition.y;
 
-    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
+    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){// add additonaball movement to totalBallRoll when hitting a floor
       if(walls[wallIndex].checkIfBallHitWallMovingRight(this, nextBallPosition)){
         console.log("hit right side of wall")
         nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2) - .0025;
@@ -596,25 +597,7 @@ class ball{
       }
     }
 
-    //console.log(this.onFloor ? "on Floor" : "Not on Floor")
-    /*
-    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
-      if(walls[wallIndex].checkIfBallCollideWallRight(this)){
-        console.log("Collided right side of wall")
-        nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2) - .0025;
-        this.emobalizeBall.right = true;
-        this.emobalizeBall.left = false;
-        this.ballVelocity.x = 0;
-      }else if(walls[wallIndex].checkIfBallCollideWallLeft(this)){
-        console.log("Collided left side of wall")
-        nextBallPosition.x = walls[wallIndex].bottomPosition.x + (this.ballDiameter / 2) + .0025;
-        this.emobalizeBall.right = false;
-        this.emobalizeBall.left = true;
-        this.ballVelocity.x = 0;
-      }      
-    }
-    */
-    this.rotation += ((40 * (this.ballPosition.x - this.prevPosition.x)) / (PI * this.ballDiameter)) * 2 * PI;
+    this.rotation += ((40 * (totalBallRoll)) / (PI * this.ballDiameter)) * 2 * PI;
   }
 }
 
@@ -828,38 +811,6 @@ function setup(){
     }
   }
   floors.push(new floor(startPosition, .2, moveVars, insideMoveFun));
-  // Floors and walls must be separate from each other
-
-
-
-  /*
-  positionOnFloor = .25
-  onFloor = floors[1];
-  bottomPosition = {x: onFloor.length * positionOnFloor, y: onFloor.startPosition.y}
-  height = wallHeight;
-  walls.push(new wall(bottomPosition, height, onFloor, function(){
-    this.repositionWall();
-  }));
-  floors[1].hasWall = walls[walls.length - 1];
-
-  positionOnFloor = .50
-  onFloor = floors[2];
-  bottomPosition = {x: onFloor.length * positionOnFloor, y: onFloor.startPosition.y}
-  height = wallHeight;
-  walls.push(new wall(bottomPosition, height, onFloor, function(){
-    this.repositionWall();
-  }));
-  floors[2].hasWall = walls[walls.length - 1];
-  
-  positionOnFloor = .75
-  onFloor = floors[3];
-  bottomPosition = {x: onFloor.length * positionOnFloor, y: onFloor.startPosition.y}
-  height = wallHeight;
-  walls.push(new wall(bottomPosition, height, onFloor, function(){
-    this.repositionWall();
-  }));
-  floors[3].hasWall = walls[walls.length - 1];
-  //*/
 }
 
 draw = function(){
