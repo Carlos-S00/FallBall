@@ -467,9 +467,7 @@ class ball{
       }
     }
 
-    nextXPosition += this.ballVelocity.x;
-
-    return this.ifBallOutOfGame(nextXPosition);
+    return nextXPosition += this.ballVelocity.x;
   }
   
   ifBallOutOfGame(nextXPosition){
@@ -524,9 +522,12 @@ class ball{
 
   doMovement(game, floors){
     let nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
+
     nextBallPosition.x = this.moveHorizontally(nextBallPosition.x);
-    nextBallPosition.y = this.moveVertically(nextBallPosition.y);
     let totalBallRoll = nextBallPosition.x - this.ballPosition.x;
+    nextBallPosition.x = this.ifBallOutOfGame(nextBallPosition.x)
+
+    nextBallPosition.y = this.moveVertically(nextBallPosition.y);
 
     if(this.onFloor){
       let floorVelocity = {x: this.onFloor.startPosition.x - this.onFloor.prevPosition.x, y: this.onFloor.startPosition.y - this.onFloor.prevPosition.y};
@@ -549,7 +550,6 @@ class ball{
         }
       }
       if(hitFloors[0]){
-        console.log("Hit a floor");
         let highestFloor = hitFloors[0];
         for(let floorIndex = 1; floorIndex < hitFloors.length; floorIndex++){
           if(hitFloors[floorIndex].startPosition.y < highestFloor.startPosition.y){
@@ -602,7 +602,6 @@ class ball{
     for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){// add additonaball movement to totalBallRoll when hitting a floor
 
       if(walls[wallIndex].ballHitWallConditionLeft(prevRightPosOfBallHolder, rightPositionOfBall, this, rightCondition)){
-        console.log("Inside Left")
         nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2) - .0025;
         if(nextBallPosition.x < 0){
           nextBallPosition.x += 1;
@@ -614,7 +613,6 @@ class ball{
           this.ballVelocity.x = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
         }
       }else if(walls[wallIndex].ballHitWallConditionRight(prevLeftPosOfBallHolder, leftPositionOfBall, this, leftCondition)){
-        console.log("Inside Right")
         nextBallPosition.x = walls[wallIndex].bottomPosition.x + (this.ballDiameter / 2) + .0025;
         if(nextBallPosition.x > 1){
           nextBallPosition.x -= 1;
