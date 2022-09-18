@@ -165,6 +165,40 @@ class gameSystem{
       }
     }
     resetMatrix();
+
+    if(position.x - (ballDiameter / 2) < this.position.startX){
+      translate(this.position.endX + (position.x -  this.position.startX), position.y);
+      rotate(ball.rotation);
+      stroke(255,255,0);
+      strokeWeight(2);
+      noFill();
+      if(ball.bounce){
+        ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
+        if(ball.justGotBounce > 1){
+          ball.justGotBounce /= 1.17;
+        } else {
+          ball.justGotBounce = 0;
+        }
+      }
+      image(ballImage, -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
+      resetMatrix();
+    }else if(position.x + (ballDiameter / 2) > this.position.endX){
+      translate(this.position.startX - (this.position.endX - position.x), position.y);
+      rotate(ball.rotation);
+      stroke(255,255,0);
+      strokeWeight(2);
+      noFill();
+      if(ball.bounce){
+        ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
+        if(ball.justGotBounce > 1){
+          ball.justGotBounce /= 1.17;
+        } else {
+          ball.justGotBounce = 0;
+        }
+      }
+      image(ballImage,  -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
+      resetMatrix();
+    }
     
     if(ball.bounceEffect){
       strokeWeight(ball.bounceEffect.duration/15);
@@ -185,18 +219,6 @@ class gameSystem{
       }
     }
     strokeWeight(1);
-
-    if(position.x - (ballDiameter / 2) < this.position.startX){
-      translate(this.position.endX + (position.x -  this.position.startX), position.y);
-      rotate(ball.rotation);
-      image(ballImage, -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
-      resetMatrix();
-    }else if(position.x + (ballDiameter / 2) > this.position.endX){
-      translate(this.position.startX - (this.position.endX - position.x), position.y);
-      rotate(ball.rotation);
-      image(ballImage,  -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
-      resetMatrix();
-    }
   }
 }
 
