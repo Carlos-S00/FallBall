@@ -563,6 +563,7 @@ class ball{
       if(walls[wallIndex].checkIfBallHitWallMovingLeft(this.prevPosition, this)){
         this.touchingWall = true;
         //console.log("left")
+        let momentumOfWall = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
         nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2) - .0025;
         wallhit.left = true;
 
@@ -574,7 +575,7 @@ class ball{
           this.ballVelocity.x = 0
           totalBallRoll = 0;
         }else{
-          if(this.onFloor && this.onFloor.startPosition.x - this.onFloor.prevPosition.x == 0){
+          if(this.onFloor && (this.onFloor.startPosition.x - this.onFloor.prevPosition.x == 0 || this.onFloor.startPosition.x - this.onFloor.prevPosition.x != momentumOfWall)){
             //console.log("added left")
             this.ballVelocity.x = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
             totalBallRoll = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
@@ -599,7 +600,7 @@ class ball{
           this.ballVelocity.x = 0
           totalBallRoll = 0;
         }else{
-          if(this.onFloor && this.onFloor.startPosition.x - this.onFloor.prevPosition.x == 0){
+          if(this.onFloor && (this.onFloor.startPosition.x - this.onFloor.prevPosition.x == 0 || this.onFloor.startPosition.x - this.onFloor.prevPosition.x != momentumOfWall)){
             //console.log("added right")
             this.ballVelocity.x = momentumOfWall;
             totalBallRoll = momentumOfWall;
@@ -778,12 +779,19 @@ function setup(){
   floors.push(new floor(startPosition, .2, moveVars, insideMoveFun));
 
   //Floor on top left corner to test ball
-  startPosition = {x: 0, y: .2};
-  floorVelocity = {x: 0, y: 0};
+  startPosition = {x: 0.1, y: .2};
+  floorVelocity = {x: 0.005, y: 0};
   beginNEndPosition = false;
   moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
-  insideMoveFun = function(){}
-  floors.push(new floor(startPosition, 1, moveVars, insideMoveFun));
+  insideMoveFun = function(){
+
+    this.moveHorizontally();
+
+    if(this.startPosition.x + .8 >= 1.3 || this.startPosition.x <= -.3){
+      this.moveVars.floorVelocity.x *= -1;
+    }
+  }
+  floors.push(new floor(startPosition, .8, moveVars, insideMoveFun));
   
   bottomPosition = {x: .2, y: .2};
   wallVelocity = {x: 0.005, y: 0};
