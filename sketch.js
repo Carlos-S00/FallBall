@@ -16,7 +16,7 @@ let scrollSpeed = 0;//.0005;
 let fallingGameSpeed = .02;
 
 let ballImage;
-let ballStartPosition = {x: .9, y: .1};
+let ballStartPosition = {x: .3, y: .1};
 let gameBallRatio = .05; // Should this be called ballDiameter instead?
 let ballAcc = .00015;
 let gravity = .0006;
@@ -373,6 +373,16 @@ class wall{
          (prevRightSideOfBall <= this.prevPosition.x && currRightSideOfBall >= this.bottomPosition.x && currRightSideOfBall <= 1) ||
          (prevRightSideOfBall <= this.prevPosition.x + 1 && currRightSideOfBall >= this.bottomPosition.x + 1)){
           return true;
+      }else if(ball.onFloor && ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x != 0){
+        let prevRightSideOfBall = prevPosition.x + (ball.ballDiameter / 2) + .0025 + -(ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x);
+        let currRightSideOfBall =  ball.ballPosition.x + (ball.ballDiameter / 2) + .0025 + -(ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x);
+        if((prevRightSideOfBall <= this.prevPosition.x - 1 && currRightSideOfBall >= this.bottomPosition.x - 1) ||
+           (prevRightSideOfBall <= this.prevPosition.x && currRightSideOfBall >= this.bottomPosition.x && currRightSideOfBall <= 1) ||
+           (prevRightSideOfBall <= this.prevPosition.x + 1 && currRightSideOfBall >= this.bottomPosition.x + 1)){
+            return true;
+          }else{
+            return false;
+          }
       }else{
         return false;
       }
@@ -392,11 +402,21 @@ class wall{
           //console.log(currLeftSideOfBall)
           //console.log("Inside Bottom: " + this.bottomPosition.x)
           return true;
-      }else{
-        return false;
+        }else if(ball.onFloor && ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x != 0){
+          let prevLeftSideOfBall = prevPosition.x - (ball.ballDiameter / 2) - .0025 + -(ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x);
+          let currLeftSideOfBall = ball.ballPosition.x - (ball.ballDiameter / 2) - .0025 + -(ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x);
+          if((prevLeftSideOfBall + .0000000000000001 >= this.prevPosition.x - 1 && currLeftSideOfBall + .0000000000000001 <= this.bottomPosition.x - 1) ||
+             (prevLeftSideOfBall + .0000000000000001 >= this.prevPosition.x && currLeftSideOfBall + .0000000000000001 <= this.bottomPosition.x && currLeftSideOfBall >= 0) ||
+             (prevLeftSideOfBall + .0000000000000001 >= this.prevPosition.x + 1 && currLeftSideOfBall + .0000000000000001 <= this.bottomPosition.x + 1)){
+              return true;
+            }else{
+              return false;
+            }
+        }else{
+          return false;
+        }
       }
     }
-  }
 
   doMovement(){
     this.prevPosition = {x: this.bottomPosition.x, y: this.bottomPosition.y};
@@ -524,6 +544,7 @@ class ball{
 
     if(this.onFloor){
       let floorVelocity = {x: this.onFloor.startPosition.x - this.onFloor.prevPosition.x, y: this.onFloor.startPosition.y - this.onFloor.prevPosition.y};
+      if()
       nextBallPosition.x += floorVelocity.x;
       nextBallPosition.y += floorVelocity.y;
 
@@ -562,7 +583,7 @@ class ball{
     for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
       if(walls[wallIndex].checkIfBallHitWallMovingLeft(this.prevPosition, this)){
         this.touchingWall = true;
-        //console.log("left")
+        console.log("left")
         let momentumOfWall = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
         nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2) - .0025;
         wallhit.left = true;
@@ -571,21 +592,21 @@ class ball{
           nextBallPosition.x += 1;
         }
 
-        if(walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x >= 0){
+        if(momentumOfWall >= 0){
           this.ballVelocity.x = 0
           totalBallRoll = 0;
         }else{
           if(this.onFloor && (this.onFloor.startPosition.x - this.onFloor.prevPosition.x == 0 || this.onFloor.startPosition.x - this.onFloor.prevPosition.x != momentumOfWall)){
-            //console.log("added left")
-            this.ballVelocity.x = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
-            totalBallRoll = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
+            console.log("added left")
+            this.ballVelocity.x = momentumOfWall;
+            totalBallRoll = momentumOfWall;
           }else{
             totalBallRoll = 0;
           }
         }
       }else if(walls[wallIndex].checkIfBallHitWallMovingRight(this.prevPosition, this)){
         this.touchingWall = true;
-        //console.log("right")
+        console.log("right")
         let momentumOfWall = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
         nextBallPosition.x = (walls[wallIndex].bottomPosition.x + (this.ballDiameter / 2) + .0025);
         //console.log("walls[wallIndex].bottomPosition.x: " + walls[wallIndex].bottomPosition.x)
@@ -601,7 +622,7 @@ class ball{
           totalBallRoll = 0;
         }else{
           if(this.onFloor && (this.onFloor.startPosition.x - this.onFloor.prevPosition.x == 0 || this.onFloor.startPosition.x - this.onFloor.prevPosition.x != momentumOfWall)){
-            //console.log("added right")
+            console.log("added right")
             this.ballVelocity.x = momentumOfWall;
             totalBallRoll = momentumOfWall;
           }else{
@@ -727,7 +748,7 @@ function setup(){
       }
     }
   }
-  walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+  //walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
   
   bottomPosition = {x: floorLength, y: heightOfGameScreen};
   wallVelocity = {x: 0.005, y: -.001};
@@ -754,7 +775,7 @@ function setup(){
       }
     }    
   }
-  walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+ // walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
 
   //Floor moving only left and right with a beginning and end position
   startPosition = {x: 0, y: heightOfGameScreen / 2};
@@ -779,7 +800,7 @@ function setup(){
   floors.push(new floor(startPosition, .2, moveVars, insideMoveFun));
 
   //Floor on top left corner to test ball
-  startPosition = {x: 0.1, y: .2};
+  startPosition = {x: -1, y: .2};
   floorVelocity = {x: 0.005, y: 0};
   beginNEndPosition = false;
   moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
@@ -787,11 +808,11 @@ function setup(){
 
     this.moveHorizontally();
 
-    if(this.startPosition.x + .8 >= 1.3 || this.startPosition.x <= -.3){
+    if(this.startPosition.x + 3 >= 2.5 || this.startPosition.x <= -1.5){
       this.moveVars.floorVelocity.x *= -1;
     }
   }
-  floors.push(new floor(startPosition, .8, moveVars, insideMoveFun));
+  floors.push(new floor(startPosition, 3, moveVars, insideMoveFun));
   
   bottomPosition = {x: .2, y: .2};
   wallVelocity = {x: 0.005, y: 0};
@@ -885,7 +906,7 @@ draw = function(){
 
   game.scrollPos += scrollSpeed;
 
-  if((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 || gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
+  if((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 || mouseIsPressed || gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
     game.fall = true;
   }
 
