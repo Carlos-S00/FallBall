@@ -379,33 +379,27 @@ class wall{
         wallCurrPosX = wallPrevPosX + -(this.bottomPosition.x - this.prevPosition.x);
         this.opp.left = false;
       }
-      console.log("currRightSideOfBall" + currRightSideOfBall)
-      console.log("wallcurrPosX" + wallCurrPosX + 1)
-      if((prevRightSideOfBall <= this.prevPosition.x - 1 && currRightSideOfBall >= wallCurrPosX - 1) ||
+      if((prevRightSideOfBall <= this.prevPosition.x - 1 && currRightSideOfBall >= wallCurrPosX - 1 && !ball.reflected) ||
           (prevRightSideOfBall <= this.prevPosition.x && currRightSideOfBall >= wallCurrPosX && !ball.reflected) ||
-          (prevRightSideOfBall <= this.prevPosition.x + 1 && currRightSideOfBall >= wallCurrPosX + 1)){
+          (prevRightSideOfBall <= this.prevPosition.x + 1 && currRightSideOfBall >= (wallCurrPosX + 1) && !ball.reflected)){
           if(this.bottomPosition.x - this.prevPosition.x > 0){
             this.opp.left = true;
           }else{
             this.opp.left = false;              
           }
-          console.log(prevRightSideOfBall <= this.prevPosition.x - 1 && currRightSideOfBall >= wallCurrPosX - 1)
-          console.log(prevRightSideOfBall <= this.prevPosition.x && currRightSideOfBall >= wallCurrPosX && !ball.reflected)
-          console.log(prevRightSideOfBall <= this.prevPosition.x + 1 && currRightSideOfBall >= wallCurrPosX + 1)
           return true;
       }else if(ball.onFloor && ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x != 0){
         let floorMovement = ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x;
         let prevRightSideOfBall = prevPosition.x + (ball.ballDiameter / 2) - floorMovement;
         let currRightSideOfBall =  ball.ballPosition.x + (ball.ballDiameter / 2) - floorMovement;
-        if((prevRightSideOfBall <= this.prevPosition.x - 1 && currRightSideOfBall >= wallCurrPosX - 1) ||
+        if((prevRightSideOfBall <= this.prevPosition.x - 1 && currRightSideOfBall >= wallCurrPosX - 1 && !ball.reflected) ||
             (prevRightSideOfBall <= this.prevPosition.x && currRightSideOfBall >= wallCurrPosX && !ball.reflected) ||
-            (prevRightSideOfBall <= this.prevPosition.x + 1 && currRightSideOfBall >= wallCurrPosX + 1)){
+            (prevRightSideOfBall <= this.prevPosition.x + 1 && currRightSideOfBall >= (wallCurrPosX + 1) && !ball.reflected) ){
             if(this.bottomPosition.x - this.prevPosition.x > 0){
               this.opp.left = true;
             }else{
               this.opp.left = false;              
             }
-            console.log("2")
             return true;
           }else{
             return false;
@@ -420,23 +414,27 @@ class wall{
       let prevLeftSideOfBall = prevPosition.x - (ball.ballDiameter / 2);
       let currLeftSideOfBall = ball.ballPosition.x - (ball.ballDiameter / 2);
       let wallPrevPosX = this.prevPosition.x;
+      console.log(wallPrevPosX)
       let wallCurrPosX = this.bottomPosition.x;
+      if(this.bottomPosition.x - this.prevPosition.x < 0){
+        console.log("right is true")
+        this.opp.right = true;
+      }
       if(this.opp.right && this.bottomPosition.x - this.prevPosition.x > 0){
         wallCurrPosX = wallPrevPosX - (this.bottomPosition.x - this.prevPosition.x);
         this.opp.right = false;
         console.log("OPP")
+        console.log(prevLeftSideOfBall + " > = " + (this.prevPosition.x - (2 * (this.bottomPosition.x - this.prevPosition.x))))
+        console.log(currLeftSideOfBall + " <= " + wallCurrPosX)
+        console.log((this.bottomPosition.x - this.prevPosition.x))
+        console.log("OPP")
+
       }
       if((prevLeftSideOfBall  >= this.prevPosition.x - 1 && currLeftSideOfBall  <= wallCurrPosX - 1) ||
          (prevLeftSideOfBall  >= this.prevPosition.x && currLeftSideOfBall  <= wallCurrPosX && !ball.reflected) ||
          (prevLeftSideOfBall  >= this.prevPosition.x + 1 && currLeftSideOfBall  <= wallCurrPosX + 1)){
           console.log("INSIDE")
-          if(this.bottomPosition.x - this.prevPosition.x < 0){
-            console.log("right is true")
-            this.opp.right = true;
-          }else{
-            console.log("right is false")
-            this.opp.right = false;
-          }
+          //console.log("1")
           return true;
         }else if(ball.onFloor && ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x != 0){
           let floorMovement = ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x;
@@ -445,17 +443,14 @@ class wall{
           if((prevLeftSideOfBall >= this.prevPosition.x - 1 && currLeftSideOfBall <= wallCurrPosX - 1) ||
              (prevLeftSideOfBall >= this.prevPosition.x && currLeftSideOfBall <= wallCurrPosX && !ball.reflected) ||
              (prevLeftSideOfBall >= this.prevPosition.x + 1 && currLeftSideOfBall <= wallCurrPosX + 1)){
-              if(this.bottomPosition.x - this.prevPosition.x < 0){
-                this.opp.right = true;
-              }else{
-                this.opp.right = false;
-              }
               return true;
             }else{
+              console.log("2")
               return false;
             }
         }else{
-          this.opp.right = false;
+          //console.log("bal reflected: " + !ball.reflected);
+          console.log("3")
           return false;
         }
       }
@@ -875,7 +870,7 @@ function setup(){
         this.moveVars.wallVelocity.x *= -1;
       }
     }else if(this.moveVars.wallVelocity.x < 0){
-      if(this.bottomPosition.x < this.moveVars.beginNEndPosition.begin){
+      if(this.bottomPosition.x <= this.moveVars.beginNEndPosition.begin){
         this.moveVars.wallVelocity.x *= -1;
       }
     }
