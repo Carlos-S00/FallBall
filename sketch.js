@@ -12,11 +12,11 @@ let backgroundImageCopy;
 let gameScreenImage;
 let aspectRatio = 3/4;
 let heightOfGameScreen;
-let scrollSpeed = 0;//.0005;
+let scrollSpeed = 0.0005;//.0005;
 let fallingGameSpeed = .02;
 
 let ballImage;
-let ballStartPosition = {x: .3, y: .1};
+let ballStartPosition = {x: .5, y: .4};
 let gameBallRatio = .05; // Should this be called ballDiameter instead?
 let ballAcc = .00015;
 let gravity = .0006;
@@ -245,6 +245,29 @@ class gameSystem{
       walls[wallIndex].bottomPosition.y += fallingGameSpeed;
     }
   }
+
+  generateGame(ball){
+    //*
+    this.scrollPos = 0;
+    ball.regenerate(ballStartPosition);
+    while(floors.length > 0){
+      delete floors[0];
+      floors.splice(0, 1);
+    }
+    while(walls.length > 0){
+      delete walls[0];
+      floors.splice(0, 1);
+    }
+    //*/
+    let startPosition = {x: .4, y: .5};
+    let floorVelocity = {x: 0, y: 0};
+    let beginNEndPositionX = false;
+    let beginNEndPosition = false;
+    let floorLength = .2;
+    let moveVars = false;
+    let insideMoveFun = function(){}
+    floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+  }
 }
 
 class shortHand{
@@ -463,10 +486,10 @@ class wall{
 }
 
 class ball{
-  constructor(ballDiameter, ballPosition){
+  constructor(ballDiameter, ballStartPosition){
       this.ballDiameter = ballDiameter;
-      this.prevPosition = {x: ballPosition.x, y: ballPosition.y};
-      this.ballPosition = {x: ballPosition.x, y: ballPosition.y};
+      this.prevPosition = {x: ballStartPosition.x, y: ballStartPosition.y};
+      this.ballPosition = {x: ballStartPosition.x, y: ballStartPosition.y};
       this.ballVelocity = {x: 0, y: 0};
       this.onFloor = false;
       this.rotation = 0;
@@ -682,6 +705,20 @@ class ball{
     this.ballPosition.y = nextBallPosition.y;
     this.rotation += ((40 * (totalBallRoll)) / (PI * this.ballDiameter)) * 2 * PI;
   }
+
+  regenerate(){
+    this.prevPosition = {x: ballStartPosition.x, y: ballStartPosition.y};
+    this.ballPosition = {x: ballStartPosition.x, y: ballStartPosition.y};
+    this.ballVelocity = {x: 0, y: 0};
+    this.onFloor = false;
+    this.rotation = 0;
+    this.addFloorVelocity = {x: 0, y: 0};
+    this.justGotBounce = 0;
+    this.bounce = true;
+    this.bounceFric = false;
+    this.wallHit = {left: false, right: false};
+    this.reflected = false;
+  }
 }
 
 function colorFunc(colorNum){
@@ -736,6 +773,9 @@ function setup(){
 
   gameBall = new ball(gameBallRatio, ballStartPosition);
 
+  game.generateGame(gameBall);
+
+  /*
   // Make function a function object to pass in with wall as well. Need to reconstruct allllll objects
   //Floor moving up, down, left, and right. Contains a beginning and end position. Stays in the game screen
   let startPosition = {x: 0, y: heightOfGameScreen};
@@ -912,6 +952,7 @@ function setup(){
   height = -heightOfGameScreen + .2;
   insideMoveFun = function(){}
   walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+  //*/
 }
 
 draw = function(){
@@ -948,7 +989,7 @@ draw = function(){
 
   game.scrollPos += scrollSpeed;
 
-  if((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 || mouseIsPressed || gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
+  if((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 || gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
     game.fall = true;
   }
 
@@ -957,13 +998,16 @@ draw = function(){
 
     textSize(32);
     text('Game Over', resolution.x / 2, (resolution.y / 3))
-    if(mouseX >= (resolution.x / 2.25 + 5) - (textWidth('Retry') / 2) && mouseX <= (resolution.x / 2.25 + 5) + (textWidth('Retry') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
+    if(mouseX >= (resolution.x / 2) - (textWidth('Retry') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Retry') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
       fill(247, 82, 121)
       if(mouseIsPressed){
+        game.generateGame(gameBall);
+        game.fall = false;
       }
     }
-    text('Retry', resolution.x / 2.25 + 5, (resolution.y / 2.25))
+    text('Retry', resolution.x / 2, (resolution.y / 2.25))
     noFill()
+    /*
     if(mouseX >= (resolution.x / 1.8 + 5) - (textWidth('Quit') / 2) && mouseX <= (resolution.x / 1.8 + 5) + (textWidth('Quit') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
       fill(247, 82, 121)
       if(mouseIsPressed){
@@ -971,6 +1015,7 @@ draw = function(){
     }
     text('Quit', resolution.x / 1.8 + 5, (resolution.y / 2.25))
     noFill()
+    */
   }
 
   //delete floors[index];
@@ -978,3 +1023,9 @@ draw = function(){
 
   frame++;
 }
+
+/*
+http://localhost:8000/main.html
+
+*/
+
