@@ -12,7 +12,7 @@ let backgroundImageCopy;
 let gameScreenImage;
 let aspectRatio = 3/4;
 let heightOfGameScreen;
-let scrollSpeed = 0.0005;//.0005;
+let scrollSpeed = 0.001;//.0005;
 let fallingGameSpeed = .02;
 
 let ballImage;
@@ -30,9 +30,10 @@ let bounceFric = -.0008;
 let floorEffectSpeed = 1;
 
 let floors = [];
-let numOfFloors = 10;
+//let numOfFloors = 10;
 let holesize = gameBallRatio * 3;
 let floorSpeed = .0001;
+let mazeGap = .2;
 
 let walls = [];
 let wallHeight = -.04;
@@ -51,6 +52,7 @@ class gameSystem{
     this.recalcScreen();
     this.fall = false;
     this.scrollPos = 0;
+    this.prevHole = -1;
   }
 
   recalcScreen(){
@@ -256,18 +258,142 @@ class gameSystem{
     }
     while(walls.length > 0){
       delete walls[0];
-      floors.splice(0, 1);
+      walls.splice(0, 1);
     }
     //*/
     let startPosition = {x: .4, y: .5};
-    let floorVelocity = {x: 0, y: 0};
-    let beginNEndPositionX = false;
-    let beginNEndPosition = false;
     let floorLength = .2;
     let moveVars = false;
     let insideMoveFun = function(){}
     floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+
+    // Half page: 4
+    // Full page: 8
+   let numOfFloors = ((Math.floor(Math.random() * 4)) * 8) + 4;
+   console.log("numFlors: " + numOfFloors);
+   this.createMazeRow(startPosition.y + mazeGap, 4);
   }
+
+  randomlyGenerateFloor(floorLevel){ // not in use
+    let begin = (Math.floor(Math.random() * 9)); // 0-8
+    let end = Math.floor(Math.random() * (9 - begin)) + (begin + 2);
+    begin /= 10;
+    end /= 10;
+    console.log("begin: " + begin)
+    console.log("end: " + end)
+    let startPosition = {x: (Math.floor(Math.random() * 9) / 10), y: floorLevel};
+    let floorVelocity = {x: ((Math.floor(Math.random() * 9)) / 1000), y: -((Math.floor(Math.random() * 9)) / 1000)};
+    let beginNEndPositionX = {begin: begin, end: end};
+    let floorLength = .2;
+    let moveVars = {floorVelocity: floorVelocity, beginNEndPositionX: beginNEndPositionX};
+    let insideMoveFun = function(){
+      this.moveVertically();
+  
+      this.moveHorizontally();
+  
+      if(this.moveVars.floorVelocity.x > 0){
+        if(this.startPosition.x + this.length > this.moveVars.beginNEndPositionX.end){
+          this.moveVars.floorVelocity.x *= -1;
+        }
+      }else if(this.moveVars.floorVelocity.x < 0){
+        if(this.startPosition.x < this.moveVars.beginNEndPositionX.begin){
+          this.moveVars.floorVelocity.x *= -1;
+        }
+      }
+    }
+    floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));    
+  }
+
+  createMazeRow(floorLevel, numOfFloors){
+
+    let begHole = random(1 - holesize);
+    let begWall = begHole;
+    for(let floorNum = 0; floorNum < numOfFloors; floorNum++){
+      while(((begHole >= this.prevHole && begHole <= this.prevHole + holesize) ||
+            (begHole + holesize >= this.prevHole && begHole + holesize <= this.prevHole + holesize))){
+        begHole = random(1 - holesize);
+      }
+      begWall = begHole;
+      this.prevHole = begHole;
+
+      while((begWall >= begHole && begWall <= begHole + holesize) || 
+            (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || begWall + holesize > 1){
+        begWall = random()
+      }
+  
+      let startPosition = {x: 0, y: floorLevel + (floorNum * mazeGap)}; 
+      let floorLength = begHole;
+      let moveVars = false;
+      let insideMoveFun = function(){}
+      floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+
+      startPosition = {x: begHole + holesize, y: floorLevel + (floorNum * mazeGap)}; 
+      floorLength = 1 - (begHole + holesize);
+      moveVars = false;
+      insideMoveFun = function(){}
+      floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+      
+      //*
+      let bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
+      let wallVelocity = false;
+      let beginNEndPositionX = false;
+      let beginNEndPosition = false;
+      moveVars = false;
+      let height = wallHeight;
+      insideMoveFun = function(){}
+      walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+      //*/
+    }
+  }
+
+  
+  createFloorsNWalls(floorLevel){
+
+    let floorindex = 0;
+    let wallIndex = 0;
+
+    for(let floorNum = 0; floorNum < numOfFloors; floorNum++){
+      let colorNum = {one: (floorindex + 1) * 20, two: (floorindex + 2) * 20, three: (floorindex + 3) * 20};
+      let begHole = random(1 - holesize);
+      let begWall = begHole;
+  
+      while(
+        (begWall >= begHole && begWall <= begHole + holesize) || 
+        (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || 
+        begWall + holesize > 1){
+        begWall = random()
+      }
+  
+      let floorStartPosition = {x: 0, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
+      let floorEndPosition = {x: begHole, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
+      
+      if(placeFloors){
+        floors[floorindex++] = new floor(floorStartPosition, floorEndPosition, colorNum.one);
+        
+        floorStartPosition = {x: begHole + holesize, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
+        floorEndPosition = {x: 1, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
+        floors[floorindex++] = new floor(floorStartPosition, floorEndPosition, colorNum.two);
+      }
+
+      let wallStartPosition = {x: begWall, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
+      let wallEndPosition = {x: begWall, y: (((1 / aspectRatio) / numOfFloors) * (floorNum + 1)) - wallHeight};
+
+      if(placeWalls){
+        walls[wallIndex++] = new wall(wallStartPosition, wallEndPosition, colorNum.three);
+
+        floorStartPosition = {x: begWall, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1) - wallHeight};
+        floorEndPosition = {x: begWall + wallwidth, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1) - wallHeight};
+
+        floors[floorindex++] = new floor(floorStartPosition, floorEndPosition, colorNum.three);
+
+        wallStartPosition = {x: begWall + wallwidth, y: ((1 / aspectRatio) / numOfFloors) * (floorNum + 1)};
+        wallEndPosition = {x: begWall + wallwidth, y: (((1 / aspectRatio) / numOfFloors) * (floorNum + 1)) - wallHeight};
+
+        walls[wallIndex++] = new wall(wallStartPosition, wallEndPosition, colorNum.three);
+      }
+    }
+  }
+
 }
 
 class shortHand{
@@ -344,27 +470,6 @@ class floor{
   doMovement(){
     this.prevPosition = {x: this.startPosition.x, y: this.startPosition.y};
     this.moveFunc();
-
-    /*
-    1) NewFloor is moving up relative to the current floor 
-    2) Ball is within the X value within the newfloor 
-    3) NewFloor crosses the Y value of the current floor Y
-
-    1 & 3) Before position of NewFloor is below Before position of CurrentFloor and After position of NewFloor is above After position of CurrentFloor
-    2)
-
-    Make function with these conditions. Call it here. Pass the ball
-
-
-    Before position of
-    After position of
-    CurrentFloor
-    NewFloor
-    is below
-    is above
-    and
-    or
-    //*/
   }
 }
 
@@ -432,12 +537,13 @@ class wall{
       }
     }
   }
+
   checkIfBallHitWallMovingRight(prevPosition, ball){
     if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y >= this.bottomPosition.y + this.height){
       let prevLeftSideOfBall = prevPosition.x - (ball.ballDiameter / 2);
       let currLeftSideOfBall = ball.ballPosition.x - (ball.ballDiameter / 2);
       let wallPrevPosX = this.prevPosition.x;
-      console.log(wallPrevPosX)
+      //console.log(wallPrevPosX)
       let wallCurrPosX = this.bottomPosition.x;
       if(this.bottomPosition.x - this.prevPosition.x < 0){
         console.log("right is true")
@@ -451,12 +557,11 @@ class wall{
         console.log(currLeftSideOfBall + " <= " + wallCurrPosX)
         console.log((this.bottomPosition.x - this.prevPosition.x))
         console.log("OPP")
-
       }
       if((prevLeftSideOfBall  >= this.prevPosition.x - 1 && currLeftSideOfBall  <= wallCurrPosX - 1) ||
          (prevLeftSideOfBall  >= this.prevPosition.x && currLeftSideOfBall  <= wallCurrPosX && !ball.reflected) ||
          (prevLeftSideOfBall  >= this.prevPosition.x + 1 && currLeftSideOfBall  <= wallCurrPosX + 1)){
-          console.log("INSIDE")
+          //console.log("INSIDE")
           //console.log("1")
           return true;
         }else if(ball.onFloor && ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x != 0){
@@ -473,11 +578,11 @@ class wall{
             }
         }else{
           //console.log("bal reflected: " + !ball.reflected);
-          console.log("3")
+          //console.log("3")
           return false;
         }
       }
-    }
+  }
 
   doMovement(){
     this.prevPosition = {x: this.bottomPosition.x, y: this.bottomPosition.y};
@@ -965,7 +1070,13 @@ draw = function(){
 
   for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
     floors[floorIndex].doMovement(gameBall);
-    game.displayFloor(floors[floorIndex]);
+    if(floors[floorIndex].startPosition.y - game.scrollPos <= -.1){
+      delete floors[floorIndex];
+      floors.splice(floorIndex, 1);
+      floorIndex--;
+    }else{
+      game.displayFloor(floors[floorIndex]);
+    }
   }
 
   if(gameBall.onFloor){
@@ -979,9 +1090,21 @@ draw = function(){
     }
   }
 
+  console.log(game.scrollPos % mazeGap)
+  if(game.scrollPos % mazeGap < 0.001){
+    console.log("Made another")
+    game.createMazeRow(floors[floors.length - 1].startPosition.y + .2, 1);
+  }
+
   for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
     walls[wallIndex].doMovement();
-    game.displayWall(walls[wallIndex]);
+    if(walls[wallIndex].bottomPosition.y - game.scrollPos <= -.1){
+      delete walls[wallIndex];
+      walls.splice(wallIndex, 1);
+      wallIndex--;
+    }else{
+      game.displayWall(walls[wallIndex]);
+    }
   }
 
   gameBall.doMovement(game, floors);
