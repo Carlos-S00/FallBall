@@ -14,6 +14,10 @@ let aspectRatio = 3/4;
 let heightOfGameScreen;
 let scrollSpeed = 0.002;//.0005;
 let fallingGameSpeed = .02;
+let gameScore = 0;
+let gamepPrevScore = 0;
+let gameScoreSpeed = 1;
+let resetgameScoreSpeed = gameScoreSpeed;
 
 let ballImage;
 let ballStartPosition = {x: .5, y: .4};
@@ -256,6 +260,9 @@ class gameSystem{
   }
 
   generateGame(ball){
+    gameScore = 0;
+    gamepPrevScore = 0;
+    gameScoreSpeed = resetgameScoreSpeed;
     //*
     this.scrollPos = 0;
     ball.regenerate(ballStartPosition);
@@ -401,6 +408,14 @@ class gameSystem{
     }
   }
 
+  displayScore(){
+    this.displayGameBackground()
+    brickCanvas.textSize(32);    
+    brickCanvas.stroke(255,255,0);
+    brickCanvas.text('Score', (((resolution.x - this.position.endX) / 2) + this.position.endX) , (resolution.y / 6))
+    brickCanvas.text(gameScore, (((resolution.x - this.position.endX) / 2) + this.position.endX) , (resolution.y / 6) + 50)
+    brickCanvas.noFill()    
+  }
 }
 
 class shortHand{
@@ -846,6 +861,7 @@ function setup(){
 
   angleMode(DEGREES);
   textAlign(CENTER);
+  brickCanvas.textAlign(CENTER);
   textSize(64);
 
   game = new gameSystem(aspectRatio);
@@ -1100,24 +1116,24 @@ draw = function(){
 
     textSize(32);
     text('Game Over', resolution.x / 2, (resolution.y / 3))
-    if(mouseX >= (resolution.x / 2) - (textWidth('Retry') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Retry') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
+    if(mouseX >= (resolution.x / 2) - (textWidth('Retry') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Retry') / 2) && mouseY >= (resolution.y / 1.5) - 32 && mouseY <= (resolution.y / 1.5)){
       fill(247, 82, 121)
       if(mouseIsPressed){
         game.generateGame(gameBall);
         game.fall = false;
       }
     }
-    text('Retry', resolution.x / 2, (resolution.y / 2.25))
+    text('Retry', resolution.x / 2, (resolution.y / 1.5))
     noFill()
-    /*
-    if(mouseX >= (resolution.x / 1.8 + 5) - (textWidth('Quit') / 2) && mouseX <= (resolution.x / 1.8 + 5) + (textWidth('Quit') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
-      fill(247, 82, 121)
-      if(mouseIsPressed){
-      }
-    }
-    text('Quit', resolution.x / 1.8 + 5, (resolution.y / 2.25))
+    game.displayGameBackground()
+    text('Score',resolution.x / 2, (resolution.y / 2.25))
+    fill(247, 82, 121)
+    text(gameScore, resolution.x / 2, (resolution.y / 2))
     noFill()
-    */
+  }else{
+    gamepPrevScore = gameScore;
+    gameScore += gameScoreSpeed;
+    game.displayScore();
   }
 
   //delete floors[index];
