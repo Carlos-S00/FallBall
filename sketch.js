@@ -18,6 +18,9 @@ let gameScore = 0;
 let gamepPrevScore = 0;
 let gameScoreSpeed = 1;
 let resetgameScoreSpeed = gameScoreSpeed;
+let maxScrollSpeed = .004;
+let scrollAcc = .0005;
+let resetScrollSpeed = scrollSpeed;
 
 let ballImage;
 let ballStartPosition = {x: .5, y: .4};
@@ -260,11 +263,14 @@ class gameSystem{
   }
 
   generateGame(ball){
-    gameScore = 0;
-    gamepPrevScore = 0;
-    gameScoreSpeed = resetgameScoreSpeed;
+    if(gameScore != 0){
+      gameScore = 0;
+      gamepPrevScore = 0;
+      gameScoreSpeed = resetgameScoreSpeed;
+      scrollSpeed = resetScrollSpeed;
+      this.scrollPos = 0;
+    }
     //*
-    this.scrollPos = 0;
     ball.regenerate(ballStartPosition);
     while(floors.length > 0){
       delete floors[0];
@@ -415,6 +421,18 @@ class gameSystem{
     brickCanvas.text('Score', (((resolution.x - this.position.endX) / 2) + this.position.endX) , (resolution.y / 6))
     brickCanvas.text(gameScore, (((resolution.x - this.position.endX) / 2) + this.position.endX) , (resolution.y / 6) + 50)
     brickCanvas.noFill()    
+  }
+
+  scroll(ball){
+    this.scrollPos += scrollSpeed;
+    if(ball.ballPosition.y - this.scrollPos > heightOfGameScreen - .2){
+      scrollSpeed += scrollAcc;
+      scrollSpeed = Math.min(scrollSpeed, maxScrollSpeed);
+    }else if(scrollSpeed > resetScrollSpeed){
+      console.log("insied here5")
+      scrollSpeed -= scrollAcc;
+      scrollSpeed = Math.max(scrollSpeed, resetScrollSpeed);
+    }
   }
 }
 
@@ -1105,7 +1123,7 @@ draw = function(){
   gameBall.doMovement(game, floors);
   game.displayBall(gameBall);
 
-  game.scrollPos += scrollSpeed;
+  game.scroll(gameBall);
 
   if((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 || gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
     game.fall = true;
