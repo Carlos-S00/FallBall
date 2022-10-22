@@ -21,6 +21,8 @@ let resetgameScoreSpeed = gameScoreSpeed;
 let maxScrollSpeed = .004;
 let scrollAcc = .0005;
 let resetScrollSpeed = scrollSpeed;
+let gameMode = {maze: false, both: false, fall: false};
+let generatedGame = false;
 
 let ballImage;
 let ballStartPosition = {x: .5, y: .4};
@@ -291,7 +293,11 @@ class gameSystem{
     // Full page: 8
    let numOfFloors = ((Math.floor(Math.random() * 4)) * 8) + 4;
    console.log("numFlors: " + numOfFloors);
-   this.createMazeRow(startPosition.y + mazeGap, 4);
+   if(gameMode.maze){
+    this.createMazeRow(startPosition.y + mazeGap, 4);
+  }else{
+    this.createMazeRow(startPosition.y + mazeGap, 4);
+  }
   }
 
   randomlyGenerateFloor(floorLevel){ // not in use
@@ -889,10 +895,10 @@ function setup(){
   game.drawRainbowCanvas();
   game.displayGameBackground();
 
-  gameBall = new ball(gameBallRatio, ballStartPosition);
-
-  game.generateGame(gameBall);
-
+  //gameBall = new ball(gameBallRatio, ballStartPosition);
+  //game.generateGame(gameBall);
+  //generatedGame = true;
+  gameMode.maze = false;
   /*
   // Make function a function object to pass in with wall as well. Need to reconstruct allllll objects
   //Floor moving up, down, left, and right. Contains a beginning and end position. Stays in the game screen
@@ -1081,77 +1087,126 @@ draw = function(){
 
   game.displayGameScreen();
 
-  for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
-    floors[floorIndex].doMovement(gameBall);
-    if(floors[floorIndex].startPosition.y - game.scrollPos <= -.1){
-      delete floors[floorIndex];
-      floors.splice(floorIndex, 1);
-      floorIndex--;
-    }else{
-      game.displayFloor(floors[floorIndex]);
-    }
-  }
-
-  if(gameBall.onFloor){
-    for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
-      if(gameBall.onFloor.isSlowerFloor(gameBall, floors[floorIndex])){
-        gameBall.onFloor.ball = false;
-        floors[floorIndex].setBallOnFloor(gameBall);
-        gameBall.ballPosition.y -= floors[floorIndex].startPosition.y - floors[floorIndex].prevPosition.y;
-        this.bounce = true;
-      }
-    }
-  }
-
-  //console.log(game.scrollPos % mazeGap)
-  if(game.scrollPos % mazeGap < 0.001 || (game.scrollPos % mazeGap) < scrollSpeed){
-    console.log("Made another")
-    game.createMazeRow(floors[floors.length - 1].startPosition.y + .2, 1);
-  }
-
-  for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
-    walls[wallIndex].doMovement();
-    if(walls[wallIndex].bottomPosition.y - game.scrollPos <= -.1){
-      delete walls[wallIndex];
-      walls.splice(wallIndex, 1);
-      wallIndex--;
-    }else{
-      game.displayWall(walls[wallIndex]);
-    }
-  }
-
-  gameBall.doMovement(game, floors);
-  game.displayBall(gameBall);
-
-  game.scroll(gameBall);
-
-  if((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 || gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
-    game.fall = true;
-  }
-
-  if(game.fall){
-    game.gameFall(gameBall, floors, walls);
-
+  if(!generatedGame && !(gameMode.maze || gameMode.both || gameMode.fall)){
     textSize(32);
-    text('Game Over', resolution.x / 2, (resolution.y / 3))
-    if(mouseX >= (resolution.x / 2) - (textWidth('Retry') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Retry') / 2) && mouseY >= (resolution.y / 1.5) - 32 && mouseY <= (resolution.y / 1.5)){
+    stroke(255,255,0);
+    text('Select Game Mode', resolution.x / 2, (resolution.y / 3))
+    noFill()
+    if(mouseX >= (resolution.x / 2.3) - (textWidth('Maze') / 2) && mouseX <= (resolution.x / 2.3) + (textWidth('Maze') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
       fill(247, 82, 121)
       if(mouseIsPressed){
-        game.generateGame(gameBall);
-        game.fall = false;
+        gameMode.maze = true;
       }
     }
-    text('Retry', resolution.x / 2, (resolution.y / 1.5))
+    text('Maze', resolution.x / 2.3, (resolution.y / 2.25))
     noFill()
-    game.displayGameBackground()
-    text('Score',resolution.x / 2, (resolution.y / 2.25))
-    fill(247, 82, 121)
-    text(gameScore, resolution.x / 2, (resolution.y / 2))
+    if(mouseX >= (resolution.x / 2) - (textWidth('Both') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Both') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
+      fill(247, 82, 121)
+      if(mouseIsPressed){
+        gameMode.both = true;
+      }
+    }
+    text('Both', resolution.x / 2, (resolution.y / 2.25))
     noFill()
-  }else{
-    gamepPrevScore = gameScore;
-    gameScore += gameScoreSpeed;
-    game.displayScore();
+    if(mouseX >= (resolution.x / 1.775) - (textWidth('Hop') / 2) && mouseX <= (resolution.x / 1.775) + (textWidth('Hop') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
+      fill(247, 82, 121)
+      if(mouseIsPressed){
+        gameMode.fall = true;
+      }
+    }
+    text('Hop', resolution.x / 1.775, (resolution.y / 2.25))
+    noFill()
+    if(gameMode.maze || gameMode.both || gameMode.fall){
+      gameBall = new ball(gameBallRatio, ballStartPosition);
+      game.generateGame(gameBall);
+      generatedGame = true;
+    }
+  }
+
+  if(generatedGame && (gameMode.maze || gameMode.both || gameMode.fall)){
+    for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+      floors[floorIndex].doMovement(gameBall);
+      if(floors[floorIndex].startPosition.y - game.scrollPos <= -.1){
+        delete floors[floorIndex];
+        floors.splice(floorIndex, 1);
+        floorIndex--;
+      }else{
+        game.displayFloor(floors[floorIndex]);
+      }
+    }
+  
+    if(gameBall.onFloor){
+      for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+        if(gameBall.onFloor.isSlowerFloor(gameBall, floors[floorIndex])){
+          gameBall.onFloor.ball = false;
+          floors[floorIndex].setBallOnFloor(gameBall);
+          gameBall.ballPosition.y -= floors[floorIndex].startPosition.y - floors[floorIndex].prevPosition.y;
+          this.bounce = true;
+        }
+      }
+    }
+  
+    //console.log(game.scrollPos % mazeGap)
+    if(gameMode.maze){
+      if(game.scrollPos % mazeGap < 0.001 || (game.scrollPos % mazeGap) < scrollSpeed){
+        console.log("in maze")
+        game.createMazeRow(floors[floors.length - 1].startPosition.y + .2, 1);
+      }
+    }
+    if(gameMode.both){
+      //console.log((floors[floors.length - 1].startPosition.y - game.scrollPos) - heightOfGameScreen)
+      //console.log(floors[floors.length - 1].startPosition.y)
+      console.log(game.scrollPos)
+      if((floors[floors.length - 1].startPosition.y - game.scrollPos) % mazeGap < 0.001 || ((floors[floors.length - 1].startPosition.y - game.scrollPos) % mazeGap) < scrollSpeed){
+        console.log("in both")
+        //game.createMazeRow(floors[floors.length - 1].startPosition.y + .2, 1);
+      }      
+    }
+  
+    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
+      walls[wallIndex].doMovement();
+      if(walls[wallIndex].bottomPosition.y - game.scrollPos <= -.1){
+        delete walls[wallIndex];
+        walls.splice(wallIndex, 1);
+        wallIndex--;
+      }else{
+        game.displayWall(walls[wallIndex]);
+      }
+    }
+  
+    gameBall.doMovement(game, floors);
+    game.displayBall(gameBall);
+  
+    game.scroll(gameBall);
+  
+    if((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 || gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
+      game.fall = true;
+    }
+  
+    if(game.fall){
+      game.gameFall(gameBall, floors, walls);
+  
+      textSize(32);
+      text('Game Over', resolution.x / 2, (resolution.y / 3))
+      if(mouseX >= (resolution.x / 2) - (textWidth('Retry') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Retry') / 2) && mouseY >= (resolution.y / 1.5) - 32 && mouseY <= (resolution.y / 1.5)){
+        fill(247, 82, 121)
+        if(mouseIsPressed){
+          game.generateGame(gameBall);
+          game.fall = false;
+        }
+      }
+      text('Retry', resolution.x / 2, (resolution.y / 1.5))
+      noFill()
+      game.displayGameBackground()
+      text('Score',resolution.x / 2, (resolution.y / 2.25))
+      fill(247, 82, 121)
+      text(gameScore, resolution.x / 2, (resolution.y / 2))
+      noFill()
+    }else{
+      gamepPrevScore = gameScore;
+      gameScore += gameScoreSpeed;
+      game.displayScore();
+    }
   }
 
   //delete floors[index];
