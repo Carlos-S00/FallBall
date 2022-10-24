@@ -332,7 +332,7 @@ class gameSystem{
   }
 
   createMazeRow(floorLevel, numOfFloors){
-
+    let addWallMov = (Math.floor(Math.random() * 2))
     let begHole = random(1 - holesize);
     let begWall = begHole;
     for(let floorNum = 0; floorNum < numOfFloors; floorNum++){
@@ -360,16 +360,52 @@ class gameSystem{
       insideMoveFun = function(){}
       floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
       
-      //*
       let bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
-      let wallVelocity = false;
-      let beginNEndPositionX = false;
-      let beginNEndPosition = false;
-      moveVars = false;
       let height = wallHeight;
-      insideMoveFun = function(){}
+      let wallVelocity = {x: 0.005, y: -.001};
+      
+      if(!addWallMov){
+        moveVars = false;
+        insideMoveFun = function(){}
+      }else{
+        let velocityDir = {x: (Math.floor(Math.random() * 2)), y: (Math.floor(Math.random() * 2))}
+        let wallMove = {hor: (Math.floor(Math.random() * 2)), ver: (Math.floor(Math.random() * 2))}
+        //wallVelocity = {x: 0.005, y: -.001};
+        if(!wallMove.hor){
+          wallVelocity.x = 0;
+        }else{
+          if(!velocityDir.x){
+            wallVelocity.x *= -1;
+          }
+        }
+        if(!wallMove.ver){
+          wallVelocity.y = 0;
+        }
+        let beginNEndPositionX = {begin: 0, end: 1};
+        let beginNEndPosition = {begin: 0, end: heightOfGameScreen};
+        moveVars = {wallVelocity: wallVelocity, beginNEndPositionX: beginNEndPositionX, beginNEndPosition: beginNEndPosition};
+        insideMoveFun = function(){
+          this.moveVertically();
+  
+          this.moveHorizontally();
+          
+          if(this.bottomPosition.y <= this.moveVars.beginNEndPosition.begin || this.bottomPosition.y >= this.moveVars.beginNEndPosition.end){
+            this.moveVars.wallVelocity.y *= -1;
+          }
+  
+          if(this.moveVars.wallVelocity.x > 0){
+            if(this.bottomPosition.x + floorLength > this.moveVars.beginNEndPositionX.end){
+              this.moveVars.wallVelocity.x *= -1;
+            }
+          }else if(this.moveVars.wallVelocity.x < 0){
+            if(this.bottomPosition.x < this.moveVars.beginNEndPositionX.begin){
+              this.moveVars.wallVelocity.x *= -1;
+            }
+          }
+        }
+      }
+      
       walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
-      //*/
     }
   }
   
