@@ -47,6 +47,7 @@ let mazeGap = .2;
 let walls = [];
 let wallHeight = -.06;
 let wallwidth = .03;
+let wallSlide = .005;
 
 //Whenever the window resizes, this function is called with the resolution variable already updated.
 function onWindowResize() {
@@ -371,7 +372,6 @@ class gameSystem{
       //*/
     }
   }
-
   
   createFloorsNWalls(floorLevel){
 
@@ -435,7 +435,7 @@ class gameSystem{
       scrollSpeed += scrollAcc;
       scrollSpeed = Math.min(scrollSpeed, maxScrollSpeed);
     }else if(scrollSpeed > resetScrollSpeed){
-      console.log("insied here5")
+      //console.log("scrolling back to speed")
       scrollSpeed -= scrollAcc;
       scrollSpeed = Math.max(scrollSpeed, resetScrollSpeed);
     }
@@ -544,7 +544,7 @@ class wall{
   }
 
   checkIfBallHitWallMovingLeft(prevPosition, ball){
-    if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y >= this.bottomPosition.y + this.height){
+    if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y + (ball.ballDiameter / 2) >= this.bottomPosition.y + this.height){
       let prevRightSideOfBall = prevPosition.x + (ball.ballDiameter / 2);
       let currRightSideOfBall =  ball.ballPosition.x + (ball.ballDiameter / 2);
       if((prevRightSideOfBall <= this.prevPosition.x - 1 && currRightSideOfBall >= this.bottomPosition.x - 1) ||
@@ -569,7 +569,8 @@ class wall{
   }
 
   checkIfBallHitWallMovingRight(prevPosition, ball){
-    if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y >= this.bottomPosition.y + this.height){
+    if(ball.ballPosition.y <= this.bottomPosition.y && ball.ballPosition.y + (ball.ballDiameter / 2) >= this.bottomPosition.y + this.height){
+      //console.log(this.bottomPosition.y)
       let prevLeftSideOfBall = prevPosition.x - (ball.ballDiameter / 2);
       let currLeftSideOfBall = ball.ballPosition.x - (ball.ballDiameter / 2);
       if((prevLeftSideOfBall  >= this.prevPosition.x - 1 && currLeftSideOfBall  <= this.bottomPosition.x - 1) ||
@@ -597,6 +598,15 @@ class wall{
       }
     }
 
+    checkIfBallHitWallVertically(prevPosition, ball){
+      if(ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) >= this.bottomPosition.x){
+        if(ball.ballPosition.y + (ball.ballDiameter / 2) >= this.bottomPosition.y + this.height && prevPosition.y + (ball.ballDiameter / 2) <= this.bottomPosition.y){
+          return true;
+        }
+      }
+      return false;
+    }
+
   doMovement(){
     this.prevPosition = {x: this.bottomPosition.x, y: this.bottomPosition.y};
     this.moveFunc();
@@ -618,6 +628,7 @@ class ball{
       this.wallHit = {left: false, right: false};
       this.prevHit = {left: false, right: false}
       this.reflected = false;
+      this.wallBounce = false;
   }
 
   moveHorizontally(nextXPosition){
@@ -712,7 +723,37 @@ class ball{
       nextBallPosition.y = this.ballPosition.y;
       this.bounce = true;
       this.justGotBounce = 80;
+      this.wallBounce = false;
     }
+  }
+
+  bounceOnWall(wall, nextBallPosition){
+    let wallVelocity = {x: wall.bottomPosition.x - wall.prevPosition.x, y: wall.bottomPosition.y - wall.prevPosition.y};
+    let relativeVal;
+    let absoluteVal;
+    if(this.ballPosition.x - (this.ballDiameter / 4) <= wall.bottomPosition.x && this.ballPosition.x + (this.ballDiameter/ 4) >= wall.bottomPosition.x){
+      relativeVal = {x: this.ballVelocity.x - wallVelocity.x, y: this.ballVelocity.y - wallVelocity.y};
+      absoluteVal = {x: relativeVal.x + wallVelocity.x, y: -relativeVal.y + wallVelocity.y};      
+    }else if(this.ballPosition.x - (this.ballDiameter / 4) <= wall.bottomPosition.x && this.ballPosition.x + (this.ballDiameter/ 4) <= wall.bottomPosition.x || 
+             this.ballPosition.x - (this.ballDiameter / 4) >= wall.bottomPosition.x && this.ballPosition.x + (this.ballDiameter/ 4) >= wall.bottomPosition.x){
+      relativeVal = {x: this.ballVelocity.x - wallVelocity.x, y: this.ballVelocity.y - wallVelocity.y};
+      absoluteVal = {x: -relativeVal.x + wallVelocity.x, y: -relativeVal.y + wallVelocity.y};      
+    }
+    if(relativeVal.y > .009){
+      nextBallPosition.y = wall.bottomPosition.y + wall.height - (this.ballDiameter / 2);
+      this.ballVelocity.y = (absoluteVal.y) * ((keyIsDown(UP_ARROW) && this.bounce) ? 1.1 : .5);
+      if(keyIsDown(UP_ARROW) && this.bounce){
+        this.playBounceEffect(60, 20, relativeVal.y, {x: nextBallPosition.x, y: wall.bottomPosition.y}, {x: 0.5, y: -0.3})
+      }
+      nextBallPosition.y += this.ballVelocity.y;
+      this.ballVelocity.x = wallVelocity.x + (relativeVal.x * .5);
+      nextBallPosition.x += this.ballVelocity.x;
+      this.bounce = false;
+    }else{
+      nextBallPosition.y = this.ballPosition.y;
+      nextBallPosition.x += this.ballVelocity.x;
+    }
+    this.wallBounce = true;
   }
 
   doMovement(game, floors){
@@ -816,6 +857,20 @@ class ball{
           }else{
             totalBallRoll = 0;
           }
+        }
+      }else if(walls[wallIndex].checkIfBallHitWallVertically(this.prevPosition, this)){
+        console.log("vertically")
+        if(!this.wallBounce){
+          this.bounceOnWall(walls[wallIndex], nextBallPosition);
+        }else{
+          if(this.ballPosition.x - (this.ballDiameter / 4) <= walls[wallIndex].bottomPosition.x && this.ballPosition.x + (this.ballDiameter/ 4) <= walls[wallIndex].bottomPosition.x){
+            nextBallPosition.x -= wallSlide;
+          }else{
+            nextBallPosition.x += wallSlide;
+          }
+        }
+        if(nextBallPosition.x > 1 || nextBallPosition < 0){
+          nextBallPosition.x -= 1;
         }
       }
     }
@@ -1149,7 +1204,7 @@ draw = function(){
     //console.log(game.scrollPos % mazeGap)
     if(gameMode.maze){
       if(game.scrollPos % mazeGap < 0.001 || (game.scrollPos % mazeGap) < scrollSpeed){
-        console.log("in maze")
+        //console.log("in maze")
         game.createMazeRow(floors[floors.length - 1].startPosition.y + .2, 1);
       }
     }
