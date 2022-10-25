@@ -362,11 +362,12 @@ class gameSystem{
       
       let bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
       let height = wallHeight;
-      let wallVelocity = {x: 0.005, y: -.001};
+      let wallVelocity = {x: 0.005, y: 0};
       
       if(!addWallMov){
         moveVars = false;
         insideMoveFun = function(){}
+        walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
       }else{
         let velocityDir = {x: (Math.floor(Math.random() * 2)), y: (Math.floor(Math.random() * 2))}
         let wallMove = {hor: (Math.floor(Math.random() * 2)), ver: (Math.floor(Math.random() * 2))}
@@ -394,7 +395,7 @@ class gameSystem{
           }
   
           if(this.moveVars.wallVelocity.x > 0){
-            if(this.bottomPosition.x + floorLength > this.moveVars.beginNEndPositionX.end){
+            if(this.bottomPosition.x > this.moveVars.beginNEndPositionX.end){
               this.moveVars.wallVelocity.x *= -1;
             }
           }else if(this.moveVars.wallVelocity.x < 0){
@@ -403,9 +404,21 @@ class gameSystem{
             }
           }
         }
-      }
-      
-      walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+        walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+        
+        while((begWall >= begHole && begWall <= begHole + holesize) || 
+        (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || begWall + holesize > 1){
+          begWall = random()
+        }
+
+        bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
+        height = wallHeight;
+        wallVelocity = {x: 0.005, y: 0};
+
+        moveVars = false;
+        insideMoveFun = function(){}
+        walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+      }      
     }
   }
   
