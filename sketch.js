@@ -23,6 +23,8 @@ let scrollAcc = .0005;
 let resetScrollSpeed = scrollSpeed;
 let gameMode = {maze: false, both: false, fall: false};
 let generatedGame = false;
+let popGame = false;
+let poppedGame = false;
 
 let ballImage;
 let ballStartPosition = {x: .5, y: .4};
@@ -145,9 +147,32 @@ class gameSystem{
     let topPosition = {x: wall.bottomPosition.x, y: wall.bottomPosition.y + wall.height}
     topPosition = g.c(topPosition);
 
-    erase();
-    line(bottomPosition.x, bottomPosition.y, topPosition.x, topPosition.y);
-    noErase();
+    if(!poppedGame){
+      erase();
+      line(bottomPosition.x, bottomPosition.y, topPosition.x, topPosition.y);
+      noErase();
+    }
+    if(wall.popEffect){
+      //console.log("doing pop effect")
+      strokeWeight(wall.popEffect.duration/15);
+      wall.popEffect.particles.forEach((particle, ind, arr) => {
+        let partPos = g.c(particle.position);
+        let partVel = {x: this.perToPx(particle.velocity.x), y: this.perToPx(particle.velocity.y)};
+        stroke(particle.color.r, particle.color.g, particle.color.b);
+        line(partPos.x, partPos.y, partPos.x + partVel.x, partPos.y + partVel.y);
+        arr[ind].position.x += particle.velocity.x;
+        arr[ind].position.y += particle.velocity.y;
+        arr[ind].velocity.y += 0.00015;
+      });
+      //let effectPos = g.c(ball.popEffect.position);
+      //ellipse(effectPos.x, effectPos.y - 20 + ball.popEffect.duration, ballDiameter+1 + 20 - ball.popEffect.duration, ballDiameter+1 + 20 - ball.popEffect.duration * 2);
+      wall.popEffect.duration -= 1;
+      if(wall.popEffect.duration == 0){
+        wall.popEffect = false;
+        wall.finishedPop = true;
+      }
+      strokeWeight(1);  
+    }
   }
   
   displayFloor(floor){
@@ -155,9 +180,33 @@ class gameSystem{
     let endPosition = {x: floor.startPosition.x + floor.length, y: startPosition.y};
     endPosition = g.c(endPosition);
 
-    erase();
-    line(startPosition.x, startPosition.y, endPosition.x, startPosition.y);
-    noErase();
+    if(!poppedGame){
+      //console.log("showing lines")
+      erase();
+      line(startPosition.x, startPosition.y, endPosition.x, startPosition.y);
+      noErase();
+    } // else if( -v)
+    if(floor.popEffect){
+      //console.log("doing pop effect")
+      strokeWeight(floor.popEffect.duration/15);
+      floor.popEffect.particles.forEach((particle, ind, arr) => {
+        let partPos = g.c(particle.position);
+        let partVel = {x: this.perToPx(particle.velocity.x), y: this.perToPx(particle.velocity.y)};
+        stroke(particle.color.r, particle.color.g, particle.color.b);
+        line(partPos.x, partPos.y, partPos.x + partVel.x, partPos.y + partVel.y);
+        arr[ind].position.x += particle.velocity.x;
+        arr[ind].position.y += particle.velocity.y;
+        arr[ind].velocity.y += 0.00015;
+      });
+      //let effectPos = g.c(ball.popEffect.position);
+      //ellipse(effectPos.x, effectPos.y - 20 + ball.popEffect.duration, ballDiameter+1 + 20 - ball.popEffect.duration, ballDiameter+1 + 20 - ball.popEffect.duration * 2);
+      floor.popEffect.duration -= 1;
+      if(floor.popEffect.duration == 0){
+        floor.popEffect = false;
+        floor.finishedPop = true;
+      }
+      strokeWeight(1);
+    }
   }
 
   displayBall(ball){
@@ -171,28 +220,14 @@ class gameSystem{
       ball.ballPosition.x += .005;
       tempPosition.x += .005;
     }
-    let position = g.c(tempPosition);
-    let ballDiameter = this.perToPx(ball.ballDiameter);
 
-    translate(position.x, position.y);
-    rotate(ball.rotation);
-    image(ballImage, -(ballDiameter / 2), -(ballDiameter / 2), ballDiameter, ballDiameter);
-    stroke(255,255,0);
-    strokeWeight(2);
-    noFill();
-    if(ball.bounce){
-      ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
-      if(ball.justGotBounce > 1){
-        ball.justGotBounce /= 1.17;
-      } else {
-        ball.justGotBounce = 0;
-      }
-    }
-    resetMatrix();
+    if(!poppedGame){
+      let position = g.c(tempPosition);
+      let ballDiameter = this.perToPx(ball.ballDiameter);
 
-    if(position.x - (ballDiameter / 2) < this.position.startX){
-      translate(this.position.endX + (position.x -  this.position.startX), position.y);
+      translate(position.x, position.y);
       rotate(ball.rotation);
+      image(ballImage, -(ballDiameter / 2), -(ballDiameter / 2), ballDiameter, ballDiameter);
       stroke(255,255,0);
       strokeWeight(2);
       noFill();
@@ -204,29 +239,66 @@ class gameSystem{
           ball.justGotBounce = 0;
         }
       }
-      image(ballImage, -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
       resetMatrix();
-    }else if(position.x + (ballDiameter / 2) > this.position.endX){
-      translate(this.position.startX - (this.position.endX - position.x), position.y);
-      rotate(ball.rotation);
-      stroke(255,255,0);
-      strokeWeight(2);
-      noFill();
-      if(ball.bounce){
-        ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
-        if(ball.justGotBounce > 1){
-          ball.justGotBounce /= 1.17;
-        } else {
-          ball.justGotBounce = 0;
+
+      if(position.x - (ballDiameter / 2) < this.position.startX){
+        translate(this.position.endX + (position.x -  this.position.startX), position.y);
+        rotate(ball.rotation);
+        stroke(255,255,0);
+        strokeWeight(2);
+        noFill();
+        if(ball.bounce){
+          ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
+          if(ball.justGotBounce > 1){
+            ball.justGotBounce /= 1.17;
+          } else {
+            ball.justGotBounce = 0;
+          }
+        }
+        image(ballImage, -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
+        resetMatrix();
+      }else if(position.x + (ballDiameter / 2) > this.position.endX){
+        translate(this.position.startX - (this.position.endX - position.x), position.y);
+        rotate(ball.rotation);
+        stroke(255,255,0);
+        strokeWeight(2);
+        noFill();
+        if(ball.bounce){
+          ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
+          if(ball.justGotBounce > 1){
+            ball.justGotBounce /= 1.17;
+          } else {
+            ball.justGotBounce = 0;
+          }
+        }
+        image(ballImage,  -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
+        resetMatrix();
+      }
+      
+      if(ball.bounceEffect){
+        strokeWeight(ball.bounceEffect.duration/15);
+        ball.bounceEffect.particles.forEach((particle, ind, arr) => {
+          let partPos = g.c(particle.position);
+          let partVel = {x: this.perToPx(particle.velocity.x), y: this.perToPx(particle.velocity.y)};
+          stroke(particle.color.r, particle.color.g, particle.color.b);
+          line(partPos.x, partPos.y, partPos.x + partVel.x, partPos.y + partVel.y);
+          arr[ind].position.x += particle.velocity.x;
+          arr[ind].position.y += particle.velocity.y;
+          arr[ind].velocity.y += 0.00015;
+        });
+        //let effectPos = g.c(ball.bounceEffect.position);
+        //ellipse(effectPos.x, effectPos.y - 20 + ball.bounceEffect.duration, ballDiameter+1 + 20 - ball.bounceEffect.duration, ballDiameter+1 + 20 - ball.bounceEffect.duration * 2);
+        ball.bounceEffect.duration -= 1;
+        if(ball.bounceEffect.duration == 0){
+          ball.bounceEffect = false;
         }
       }
-      image(ballImage,  -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
-      resetMatrix();
+      strokeWeight(1);
     }
-    
-    if(ball.bounceEffect){
-      strokeWeight(ball.bounceEffect.duration/15);
-      ball.bounceEffect.particles.forEach((particle, ind, arr) => {
+    if(ball.popEffect){
+      //console.log("doing pop effect")
+      strokeWeight(ball.popEffect.duration/15);
+      ball.popEffect.particles.forEach((particle, ind, arr) => {
         let partPos = g.c(particle.position);
         let partVel = {x: this.perToPx(particle.velocity.x), y: this.perToPx(particle.velocity.y)};
         stroke(particle.color.r, particle.color.g, particle.color.b);
@@ -235,14 +307,15 @@ class gameSystem{
         arr[ind].position.y += particle.velocity.y;
         arr[ind].velocity.y += 0.00015;
       });
-      //let effectPos = g.c(ball.bounceEffect.position);
-      //ellipse(effectPos.x, effectPos.y - 20 + ball.bounceEffect.duration, ballDiameter+1 + 20 - ball.bounceEffect.duration, ballDiameter+1 + 20 - ball.bounceEffect.duration * 2);
-      ball.bounceEffect.duration -= 1;
-      if(ball.bounceEffect.duration == 0){
-        ball.bounceEffect = false;
+      //let effectPos = g.c(ball.popEffect.position);
+      //ellipse(effectPos.x, effectPos.y - 20 + ball.popEffect.duration, ballDiameter+1 + 20 - ball.popEffect.duration, ballDiameter+1 + 20 - ball.popEffect.duration * 2);
+      ball.popEffect.duration -= 1;
+      if(ball.popEffect.duration == 0){
+        ball.popEffect = false;
+        ball.finishedPop = true;
       }
+      strokeWeight(1);
     }
-    strokeWeight(1);
   }
 
   gameFall(ball, floors, walls){
@@ -263,6 +336,16 @@ class gameSystem{
       }
       walls[wallIndex].bottomPosition.y += fallingGameSpeed;
     }
+  }
+
+  gamePop(ball, floors, walls){
+    for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+      floors[floorIndex].playPopEffect(60, 20, .03, {x: floors[floorIndex].startPosition.x + (floors[floorIndex].length / 2), y: floors[floorIndex].startPosition.y}, {x: floors[floorIndex].length, y: -0.3});
+    }
+    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
+      walls[wallIndex].playPopEffect(60, 20, .03, {x: walls[wallIndex].bottomPosition.x, y: walls[wallIndex].bottomPosition.y}, {x: 0.5, y: -0.3});
+    }
+    ball.playPopEffect(60, 20, .03, {x: ball.ballPosition.x, y: ball.ballPosition.y}, {x: 0.5, y: -0.3});
   }
 
   generateGame(ball){
@@ -515,6 +598,7 @@ class floor{
     }
     this.prevPosition = false;
     this.hasWall = false;
+    this.finishedPop = false;
   }
     
   moveVertically(){
@@ -566,6 +650,16 @@ class floor{
     this.prevPosition = {x: this.startPosition.x, y: this.startPosition.y};
     this.moveFunc();
   }
+
+  playPopEffect(duration, numParticles, strength, position, scale){
+    let particles = [];
+    for(var i = 0; i < numParticles; i++){
+      particles.push({position: {x: position.x, y: position.y}, 
+                      velocity: {x: (Math.random() - 0.5) * strength * scale.x, y: Math.random() * strength * scale.y},
+                      color: {r: Math.random() * 135 + 120, g: Math.random() * 135 + 120, b: Math.random() * 135 + 120}});
+    }
+    this.popEffect = {particles: particles, duration: duration};
+  }
 }
 
 class wall{
@@ -580,6 +674,7 @@ class wall{
     }
     this.prevPosition = false;
     this.opp = {left: false, right: false};
+    this.finishedPop = false;
   }
 
   moveVertically(){
@@ -660,6 +755,16 @@ class wall{
     this.prevPosition = {x: this.bottomPosition.x, y: this.bottomPosition.y};
     this.moveFunc();
   }
+  
+  playPopEffect(duration, numParticles, strength, position, scale){
+    let particles = [];
+    for(var i = 0; i < numParticles; i++){
+      particles.push({position: {x: position.x, y: position.y}, 
+                      velocity: {x: (Math.random() - 0.5) * strength * scale.x, y: Math.random() * strength * scale.y},
+                      color: {r: Math.random() * 135 + 120, g: Math.random() * 135 + 120, b: Math.random() * 135 + 120}});
+    }
+    this.popEffect = {particles: particles, duration: duration};
+  }
 }
 
 class ball{
@@ -678,6 +783,7 @@ class ball{
       this.prevHit = {left: false, right: false}
       this.reflected = false;
       this.wallBounce = false;
+      this.finishedPop = false;
   }
 
   moveHorizontally(nextXPosition){
@@ -753,6 +859,16 @@ class ball{
     this.bounceEffect = {particles: particles, duration: duration};
   }
 
+  playPopEffect(duration, numParticles, strength, position, scale){
+    let particles = [];
+    for(var i = 0; i < numParticles; i++){
+      particles.push({position: {x: position.x, y: position.y}, 
+                      velocity: {x: (Math.random() - 0.5) * strength * scale.x, y: Math.random() * strength * scale.y},
+                      color: {r: Math.random() * 135 + 120, g: Math.random() * 135 + 120, b: Math.random() * 135 + 120}});
+    }
+    this.popEffect = {particles: particles, duration: duration};
+  }
+
   bounceOnFloor(floor, nextBallPosition){
     let floorVelocity = {x: floor.startPosition.x - floor.prevPosition.x, y: floor.startPosition.y - floor.prevPosition.y};
     let relativeVal = {x: this.ballVelocity.x - floorVelocity.x, y: this.ballVelocity.y - floorVelocity.y};
@@ -792,7 +908,7 @@ class ball{
       nextBallPosition.y = wall.bottomPosition.y + wall.height - (this.ballDiameter / 2);
       this.ballVelocity.y = (absoluteVal.y) * ((keyIsDown(UP_ARROW) && this.bounce) ? 1.1 : .5);
       if(keyIsDown(UP_ARROW) && this.bounce){
-        this.playBounceEffect(60, 20, relativeVal.y, {x: nextBallPosition.x, y: wall.bottomPosition.y}, {x: 0.5, y: -0.3})
+        this.playBounceEffect(60, 20, relativeVal.y, {x: nextBallPosition.x, y: wall.bottomPosition.y + wall.height}, {x: 0.5, y: -0.3})
       }
       nextBallPosition.y += this.ballVelocity.y;
       this.ballVelocity.x = wallVelocity.x + (relativeVal.x * .5);
@@ -805,7 +921,7 @@ class ball{
     this.wallBounce = true;
   }
 
-  doMovement(game, floors){
+  doMovement(game, floors, walls){
     let nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
 
     nextBallPosition.x = this.moveHorizontally(nextBallPosition.x);
@@ -876,7 +992,7 @@ class ball{
           totalBallRoll = 0;
         }else{
           if(this.onFloor && (this.onFloor.startPosition.x - this.onFloor.prevPosition.x == 0 || this.onFloor.startPosition.x - this.onFloor.prevPosition.x != momentumOfWall)){
-            console.log("added left")
+            //console.log("added left")
             this.ballVelocity.x = momentumOfWall;
             totalBallRoll = momentumOfWall;
           }else{
@@ -900,7 +1016,7 @@ class ball{
           totalBallRoll = 0;
         }else{
           if(this.onFloor && (this.onFloor.startPosition.x - this.onFloor.prevPosition.x == 0 || this.onFloor.startPosition.x - this.onFloor.prevPosition.x != momentumOfWall)){
-            console.log("added right")
+            //console.log("added right")
             this.ballVelocity.x = momentumOfWall;
             totalBallRoll = momentumOfWall;
           }else{
@@ -908,7 +1024,7 @@ class ball{
           }
         }
       }else if(walls[wallIndex].checkIfBallHitWallVertically(this.prevPosition, this)){
-        console.log("vertically")
+        //console.log("vertically")
         if(!this.wallBounce){
           this.bounceOnWall(walls[wallIndex], nextBallPosition);
         }else{
@@ -945,6 +1061,7 @@ class ball{
     this.bounceFric = false;
     this.wallHit = {left: false, right: false};
     this.reflected = false;
+    this.finishedPop = false;
   }
 }
 
@@ -1228,7 +1345,7 @@ draw = function(){
   }
 
   if(generatedGame && (gameMode.maze || gameMode.both || gameMode.fall)){
-    for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+    for(let floorIndex = 0; floorIndex < floors.length && !floors[floors.length - 1].finishedPop; floorIndex++){
       floors[floorIndex].doMovement(gameBall);
       if(floors[floorIndex].startPosition.y - game.scrollPos <= -.1){
         delete floors[floorIndex];
@@ -1267,7 +1384,7 @@ draw = function(){
       }      
     }
   
-    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
+    for(let wallIndex = 0; wallIndex < walls.length && !walls[walls.length - 1].finishedPop; wallIndex++){
       walls[wallIndex].doMovement();
       if(walls[wallIndex].bottomPosition.y - game.scrollPos <= -.1){
         delete walls[wallIndex];
@@ -1277,26 +1394,37 @@ draw = function(){
         game.displayWall(walls[wallIndex]);
       }
     }
-  
-    gameBall.doMovement(game, floors);
-    game.displayBall(gameBall);
+    if(!popGame){
+      gameBall.doMovement(game, floors, walls);
+      game.displayBall(gameBall);
+      //gameBall.finishedPop = false;
+    }
   
     game.scroll(gameBall);
   
     if((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 || gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
       game.fall = true;
+      popGame = true;
     }
   
-    if(game.fall){
-      game.gameFall(gameBall, floors, walls);
+    if(game.fall || popGame){
+      //game.gameFall(gameBall, floors, walls);
+      if(!poppedGame){
+        console.log("popping game")
+        game.gamePop(gameBall, floors, walls);
+      }
+      poppedGame = true;
   
       textSize(32);
+      stroke(255,255,0);
       text('Game Over', resolution.x / 2, (resolution.y / 3))
       if(mouseX >= (resolution.x / 2) - (textWidth('Retry') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Retry') / 2) && mouseY >= (resolution.y / 1.5) - 32 && mouseY <= (resolution.y / 1.5)){
         fill(247, 82, 121)
         if(mouseIsPressed){
           game.generateGame(gameBall);
           game.fall = false;
+          popGame = false;
+          poppedGame = false;
         }
       }
       text('Retry', resolution.x / 2, (resolution.y / 1.5))
