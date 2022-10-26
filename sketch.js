@@ -25,6 +25,7 @@ let gameMode = {maze: false, both: false, fall: false};
 let generatedGame = false;
 let popGame = false;
 let poppedGame = false;
+let frameSize = 4;
 
 let ballImage;
 let ballStartPosition = {x: .5, y: .4};
@@ -65,6 +66,7 @@ class gameSystem{
     this.fall = false;
     this.scrollPos = 0;
     this.prevHole = -1;
+    this.bottomOfFrame = 0;
   }
 
   recalcScreen(){
@@ -375,12 +377,19 @@ class gameSystem{
 
     // Half page: 4
     // Full page: 8
-   let numOfFloors = ((Math.floor(Math.random() * 4)) * 8) + 4;
+   let numOfFloors = ((Math.floor(Math.random() * 4)) * 8) + 4; // make this num of frames
    console.log("numFlors: " + numOfFloors);
    if(gameMode.maze){
-    this.createMazeRow(startPosition.y + mazeGap, 4);
+    this.createMazeFrame(startPosition.y + mazeGap, 1);
+  }else if(gameMode.both){
+    let randFrame = (Math.floor(Math.random() * 2));
+    if(randFrame){
+      game.createMazeFrame(floors[floors.length - 1].startPosition.y + mazeGap, 1);            
+    }else{
+      //creates moveFrame
+    }
   }else{
-    this.createMazeRow(startPosition.y + mazeGap, 4);
+
   }
   }
 
@@ -412,6 +421,13 @@ class gameSystem{
       }
     }
     floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));    
+  }
+
+  createMazeFrame(floorLevel, numOfFrames){
+    for(let frameIndex = 0; frameIndex < numOfFrames; frameIndex++){
+        this.createMazeRow(floorLevel + (frameIndex * (mazeGap * frameSize)), frameSize);
+    }
+    this.bottomOfFrame = floors[floors.length - 1].startPosition.y;
   }
 
   createMazeRow(floorLevel, numOfFloors){
@@ -1367,22 +1383,23 @@ draw = function(){
       }
     }
   
-    //console.log(game.scrollPos % mazeGap)
-    if(gameMode.maze){
-      if(game.scrollPos % mazeGap < 0.001 || (game.scrollPos % mazeGap) < scrollSpeed){
-        //console.log("in maze")
-        game.createMazeRow(floors[floors.length - 1].startPosition.y + .2, 1);
+    if(!popGame){      
+      if(game.bottomOfFrame - game.scrollPos <= heightOfGameScreen - (mazeGap / 2)){
+        if(gameMode.maze){
+          console.log("created maze frame")
+          game.createMazeFrame(floors[floors.length - 1].startPosition.y + mazeGap, 1);
+        }else if(gameMode.both){
+          let randFrame = (Math.floor(Math.random() * 2));
+          if(randFrame){
+            game.createMazeFrame(floors[floors.length - 1].startPosition.y + mazeGap, 1);            
+          }else{
+            //creates moveFrame
+          }
+        }else{
+          //creates moveFrame
+        }
       }
-    }
-    if(gameMode.both){
-      //console.log((floors[floors.length - 1].startPosition.y - game.scrollPos) - heightOfGameScreen)
-      //console.log(floors[floors.length - 1].startPosition.y)
-      console.log(game.scrollPos)
-      if((floors[floors.length - 1].startPosition.y - game.scrollPos) % mazeGap < 0.001 || ((floors[floors.length - 1].startPosition.y - game.scrollPos) % mazeGap) < scrollSpeed){
-        console.log("in both")
-        //game.createMazeRow(floors[floors.length - 1].startPosition.y + .2, 1);
-      }      
-    }
+    } 
   
     for(let wallIndex = 0; wallIndex < walls.length && !walls[walls.length - 1].finishedPop; wallIndex++){
       walls[wallIndex].doMovement();
@@ -1394,7 +1411,8 @@ draw = function(){
         game.displayWall(walls[wallIndex]);
       }
     }
-    if(!popGame){
+
+    if(!gameBall.finishedPop){
       gameBall.doMovement(game, floors, walls);
       game.displayBall(gameBall);
       //gameBall.finishedPop = false;
