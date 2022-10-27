@@ -26,7 +26,7 @@ let generatedGame = false;
 let popGame = false;
 let poppedGame = false;
 let frameSize = 4;
-let totalFrames = 5; // Maximum of 2 pages worth of frame
+let totalFrames = 4; // Maximum of 2 pages worth of frame
 
 let ballImage;
 let ballStartPosition = {x: .5, y: .4};
@@ -47,7 +47,7 @@ let floors = [];
 let holesize = gameBallRatio * 3;
 let floorSpeed = .0001;
 let mazeGap = .2;
-
+let moveGap = (frameSize * mazeGap) / 3;
 
 let walls = [];
 let wallHeight = -.06;
@@ -69,6 +69,7 @@ class gameSystem{
     this.scrollPos = 0;
     this.prevHole = -1;
     this.bottomOfFrame = 0;
+    this.prevFrame = {maze: false};
   }
 
   recalcScreen(){
@@ -82,8 +83,8 @@ class gameSystem{
       endY: resolution.y
     }
 
-    this.section1 = (this.position.endX - this.position.startX) / 3; 
-    this.section2 = ((this.position.endX - this.position.startX) / 3) * 2; 
+    this.section1 = this.widthOfGameScreen / 3; 
+    this.section2 = (this.widthOfGameScreen / 3) * 2; 
   }
 
   drawRainbowCanvas(){
@@ -380,14 +381,15 @@ class gameSystem{
     let insideMoveFun = function(){}
     floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
 
-    let numOfFrames = (Math.floor(Math.random() * (totalFrames)));
+    let numOfFrames = (Math.floor(Math.random() * (totalFrames)) + 1);
     console.log("numOfFrames: " + numOfFrames);
     if(gameMode.maze){
       this.createMazeFrame(startPosition.y + mazeGap, 1);
     }else if(gameMode.both){
       let randFrame = (Math.floor(Math.random() * 2));
       if(randFrame){
-        game.createMazeFrame(floors[floors.length - 1].startPosition.y + mazeGap, numOfFrames);            
+        game.createMazeFrame(floors[floors.length - 1].startPosition.y + mazeGap, numOfFrames);
+        game.prevFrame.maze = true;        
       }else{
         game.createMoveFrame(floors[floors.length - 1].startPosition.y, numOfFrames);
       }
@@ -497,25 +499,129 @@ class gameSystem{
   
   createMoveFrame(floorLevel, numOfFrames){
     console.log("creating move frame")
-    let spacing1 = ((mazeGap * frameSize) * numOfFrames);
-    let spacing2 = floorLevel + (mazeGap * frameSize);
-    let spacing3 = (mazeGap * frameSize); // I think this one = .2 * 4 = .8
-    spacing3 /= 3; // 1 frame = .26
-    floorLevel += spacing3;
+    //let spacing1 = ((mazeGap * frameSize) * numOfFrames);
+    //let spacing2 = floorLevel + (mazeGap * frameSize);
+    //let spacing3 = (mazeGap * frameSize); // I think this one = .2 * 4 = .8 now is moveGap
+    //spacing3 /= 3; // 1 frame = .26
+    floorLevel += moveGap;
     for(let frameIndex = 0; frameIndex < numOfFrames; frameIndex++){
-      this.createMoveRow(floorLevel + (frameIndex * (spacing3 * frameSize)), spacing3, frameSize - 1);
+      this.createMoveRow(floorLevel + (frameIndex * (moveGap * frameSize)), moveGap, frameSize);
     }
-    this.bottomOfFrame = floors[floors.length - 1].startPosition.y;
+    this.bottomOfFrame = floorLevel + ((moveGap * frameSize) * numOfFrames) + moveGap;
   }
 
-  createMoveRow(floorLevel, spacing3, numOfFloors){
+  createMoveRow(floorLevel, moveGap, numOfFloors){
+    let newFloorsSet = []
+    let newFloorCoordR = []
+    let newFloorCoordC = []
+    // Index            0      1      2      3
+    // FloorType:       0      1      1      2
+    // FloorName:       V      H      H      S
+    newFloorsSet.push(false, false, false, false);
+    newFloorCoordR.push(-1, -1, -1, -1);
+    newFloorCoordC.push(-1, -1, -1, -1);
+
+
+    for(let i = 0; i < numOfFloors; i++){
+      let coord = {r: Math.floor(Math.random() * 4), c: Math.floor(Math.random() * 3)}; // 0-3, 0-2
+      let floorType = Math.floor(Math.random() * 3); // 0-2
+      while((floorType == 0 && newFloorsSet[0]) || (floorType == 1 && newFloorsSet[2]) || (floorType == 2 && newFloorsSet[3])){
+        floorType = Math.floor(Math.random() * 3);
+      }
+
+      if(floorType == 0 && !newFloorsSet[0]){
+        while(newFloorsSet[3] && newFloorCoordC[3] == coord.c){
+          coord.c = Math.floor(Math.random() * 4);
+        }
+        
+        let floorLength = .3;
+        let floorXPos = (coord.c * this.section1) + (this.section1 / 2) - (floorLength / 2)
+        let startPosition = {x: .1, y: floorLevel + (coord.r * moveGap)}; 
+        let floorVelocity = {x: 0, y: -.005};
+        let beginNEndPosition = {begin: floorLevel, end: floorLevel + (moveGap * numOfFloors)};
+        let moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
+        let insideMoveFun = function(){
+          this.moveVertically();
+      
+          if(this.startPosition.y <= this.moveVars.beginNEndPosition.begin || this.startPosition.y >= this.moveVars.beginNEndPosition.end){
+            this.moveVars.floorVelocity.y *= -1;
+          }
+        }
+
+        console.log("created floor 1")
+        floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+        newFloorsSet[0] = true;
+        newFloorCoordC[0] = coord.c;
+        newFloorCoordR[0] = coord.r;
+
+      }else if(floorType == 1 && (!newFloorsSet[1] || !newFloorsSet[2])){        
+        while(newFloorsSet[1] && newFloorCoordR[1] == coord.r){
+          coord.r = Math.floor(Math.random() * 4);
+        }
+
+        let floorLength = .3;
+        let floorXPos = (coord.c * this.section1) + (this.section1 / 2) - (floorLength / 2)
+        let startPosition = {x: .3, y: floorLevel + (coord.r * moveGap)}; 
+        let floorVelocity = {x: 0.005, y: 0};
+        if(newFloorsSet[1]) floorVelocity.x *= -1;
+        let beginNEndPosition = {begin: 0, end: 1};
+        let moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
+        let insideMoveFun = function(){
+          this.moveHorizontally();
+
+          if(this.moveVars.floorVelocity.x > 0){
+            if(this.startPosition.x + this.length > this.moveVars.beginNEndPosition.end){
+              this.moveVars.floorVelocity.x *= -1;
+              this.startPosition.x = (this.moveVars.beginNEndPosition.end - ((this.startPosition.x + this.length) - this.moveVars.beginNEndPosition.end)) - this.length;
+            }
+          }else if(this.moveVars.floorVelocity.x < 0){
+            if(this.startPosition.x < this.moveVars.beginNEndPosition.begin){
+              this.moveVars.floorVelocity.x *= -1;
+              this.startPosition.x = this.moveVars.beginNEndPosition.begin + (this.moveVars.beginNEndPosition.begin - this.startPosition.x);
+            }
+          }
+        }
+        console.log("created floor 2")
+        floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+        if(newFloorsSet[1]){
+          newFloorsSet[2] = true;
+          newFloorCoordC[2] = coord.c;
+          newFloorCoordR[2] = coord.r;
+        }else{
+          newFloorsSet[1] = true;
+          newFloorCoordC[1] = coord.c;
+          newFloorCoordR[1] = coord.r;
+        }
+      }else if(floorType == 2 && !newFloorsSet[3]){
+        
+        while((newFloorsSet[1] && newFloorCoordR[1] == coord.r) || (newFloorsSet[2] && newFloorCoordR[2] == coord.r)){
+          coord.r = Math.floor(Math.random() * 4);
+        }
+
+        let floorLength = .3;
+        let floorXPos = (coord.c * this.section1) + (this.section1 / 2) - (floorLength / 2)
+        let startPosition = {x: .7, y: floorLevel + (coord.r * moveGap)}; 
+        let moveVars = false;
+        let insideMoveFun = function(){}
+
+        console.log("created floor 3")
+        floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+        newFloorsSet[3] = true;
+        newFloorCoordC[3] = coord.c;
+        newFloorCoordR[3] = coord.r;
+      }      
+    }
+    console.log("FINISHED")
+
+    /*
     for(let moveIndex = 0; moveIndex < numOfFloors; moveIndex++){
-      let startPosition = {x: .3, y: floorLevel + (moveIndex * spacing3)}; 
+      let startPosition = {x: .3, y: floorLevel + (moveIndex * moveGap)}; 
       let floorLength = .4;
       let moveVars = false;
       let insideMoveFun = function(){}
       floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
     }
+    //*/
   }
   
   createFloorsNWalls(floorLevel){
@@ -1384,16 +1490,18 @@ draw = function(){
       if(game.bottomOfFrame - game.scrollPos <= heightOfGameScreen - (mazeGap / 2)){
         if(gameMode.maze){
           console.log("created maze frame")
-          game.createMazeFrame(floors[floors.length - 1].startPosition.y + mazeGap, 1);
+          game.createMazeFrame(game.bottomOfFrame + mazeGap, 1);
         }else if(gameMode.both){
           let randFrame = (Math.floor(Math.random() * 2));
           if(randFrame){
-            game.createMazeFrame(floors[floors.length - 1].startPosition.y + mazeGap, 1);            
+            game.createMazeFrame(game.bottomOfFrame , 1);     
+            game.prevFrame.maze = true;       
           }else{
-            game.createMoveFrame(floors[floors.length - 1].startPosition.y, 1);
+            game.createMoveFrame(game.bottomOfFrame, 1);
+            game.prevFrame.maze = false;
           }
         }else{
-          game.createMoveFrame(floors[floors.length - 1].startPosition.y, 1);
+          game.createMoveFrame(game.bottomOfFrame, 1);
         }
       }
     } 
@@ -1409,10 +1517,10 @@ draw = function(){
       }
     }
 
-    if(!gameBall.finishedPop){
+    if(!gameBall.finishedPop || !popGame){
       gameBall.doMovement(game, floors, walls);
       game.displayBall(gameBall);
-      //gameBall.finishedPop = false;
+      gameBall.finishedPop = false;
     }else{
       console.log("ITS POPPED")
     }
