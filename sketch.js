@@ -82,9 +82,6 @@ class gameSystem{
       endX: (resolution.x/2) + (this.widthOfGameScreen/2),
       endY: resolution.y
     }
-
-    this.section1 = this.widthOfGameScreen / 3; 
-    this.section2 = (this.widthOfGameScreen / 3) * 2; 
   }
 
   drawRainbowCanvas(){
@@ -563,9 +560,9 @@ class gameSystem{
           coord.c = Math.floor(Math.random() * 3);
         }
         
-        let floorLength = .3;
-        let floorXPos = (coord.c * this.section1) + (this.section1 / 2) - (floorLength / 2)
-        let startPosition = {x: .1, y: floorLevel + (coord.r * moveGap)}; 
+        let floorLength = .25;
+        let floorXPos = (coord.c * .33) + .16 - (floorLength / 2);
+        let startPosition = {x: floorXPos, y: floorLevel + (coord.r * moveGap)}; 
         let floorVelocity = {x: 0, y: -.005};
         let beginNEndPosition = {begin: floorLevel, end: floorLevel + (moveGap * numOfFloors)};
         let moveVars = {floorVelocity: floorVelocity, beginNEndPosition: beginNEndPosition};
@@ -588,9 +585,9 @@ class gameSystem{
           coord.r = Math.floor(Math.random() * 4);
         }
 
-        let floorLength = .3;
-        let floorXPos = (coord.c * this.section1) + (this.section1 / 2) - (floorLength / 2)
-        let startPosition = {x: .3, y: floorLevel + (coord.r * moveGap)}; 
+        let floorLength = .25;
+        let floorXPos = (coord.c * .33) + .16 - (floorLength / 2);
+        let startPosition = {x: floorXPos, y: floorLevel + (coord.r * moveGap)}; 
         let floorVelocity = {x: 0.005, y: 0};
         if(newFloorsSet[1]) floorVelocity.x *= -1;
         let beginNEndPosition = {begin: 0, end: 1};
@@ -627,9 +624,9 @@ class gameSystem{
           coord.r = Math.floor(Math.random() * 4);
         }
 
-        let floorLength = .3;
-        let floorXPos = (coord.c * this.section1) + (this.section1 / 2) - (floorLength / 2)
-        let startPosition = {x: .7, y: floorLevel + (coord.r * moveGap)}; 
+        let floorLength = .25;
+        let floorXPos = (coord.c * .33) + .16 - (floorLength / 2);
+        let startPosition = {x: floorXPos, y: floorLevel + (coord.r * moveGap)}; 
         let moveVars = false;
         let insideMoveFun = function(){}
 
@@ -1557,8 +1554,8 @@ draw = function(){
     game.scroll(gameBall);
   
     if((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 || gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
-      game.fall = true;
-      popGame = true;
+      //game.fall = true;
+      //popGame = true;
     }
   
     if(game.fall || popGame){
