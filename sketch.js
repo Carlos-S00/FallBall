@@ -389,7 +389,7 @@ class gameSystem{
       let randFrame = (Math.floor(Math.random() * 2));
       if(randFrame){
         game.createMazeFrame(floors[floors.length - 1].startPosition.y + mazeGap, numOfFrames);
-        game.prevFrame.maze = true;        
+        game.prevFrame.maze = true;
       }else{
         game.createMoveFrame(floors[floors.length - 1].startPosition.y, numOfFrames);
       }
@@ -504,10 +504,39 @@ class gameSystem{
     //let spacing3 = (mazeGap * frameSize); // I think this one = .2 * 4 = .8 now is moveGap
     //spacing3 /= 3; // 1 frame = .26
     floorLevel += moveGap;
+    //*
     for(let frameIndex = 0; frameIndex < numOfFrames; frameIndex++){
       this.createMoveRow(floorLevel + (frameIndex * (moveGap * frameSize)), moveGap, frameSize);
     }
-    this.bottomOfFrame = floorLevel + ((moveGap * frameSize) * numOfFrames) + moveGap;
+    this.bottomOfFrame = floorLevel + ((moveGap * frameSize) * numOfFrames);
+    //*/
+    /* below is used for testing move frame boundaries
+    let startPosition = {x: 0, y: floorLevel}; 
+    let floorLength = .1;
+    let moveVars = false;
+    let insideMoveFun = function(){}
+    floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+    
+    startPosition = {x: .1, y: floorLevel +  (moveGap * 1)}; 
+    floorLength = .1;
+    moveVars = false;
+    insideMoveFun = function(){}
+    floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+    
+    startPosition = {x: .2, y: floorLevel +  (moveGap * 2)}; 
+    floorLength = .1;
+    moveVars = false;
+    insideMoveFun = function(){}
+    floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+    
+    startPosition = {x: .3, y: floorLevel +  (moveGap * 3)}; 
+    floorLength = .1;
+    moveVars = false;
+    insideMoveFun = function(){}
+    floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
+    
+    this.bottomOfFrame = floorLevel + (moveGap * 3);
+    //*/
   }
 
   createMoveRow(floorLevel, moveGap, numOfFloors){
@@ -531,7 +560,7 @@ class gameSystem{
 
       if(floorType == 0 && !newFloorsSet[0]){
         while(newFloorsSet[3] && newFloorCoordC[3] == coord.c){
-          coord.c = Math.floor(Math.random() * 4);
+          coord.c = Math.floor(Math.random() * 3);
         }
         
         let floorLength = .3;
@@ -543,7 +572,7 @@ class gameSystem{
         let insideMoveFun = function(){
           this.moveVertically();
       
-          if(this.startPosition.y <= this.moveVars.beginNEndPosition.begin || this.startPosition.y >= this.moveVars.beginNEndPosition.end){
+          if(this.startPosition.y < this.moveVars.beginNEndPosition.begin || this.startPosition.y > this.moveVars.beginNEndPosition.end){
             this.moveVars.floorVelocity.y *= -1;
           }
         }
@@ -555,7 +584,7 @@ class gameSystem{
         newFloorCoordR[0] = coord.r;
 
       }else if(floorType == 1 && (!newFloorsSet[1] || !newFloorsSet[2])){        
-        while(newFloorsSet[1] && newFloorCoordR[1] == coord.r){
+        while((newFloorsSet[1] && newFloorCoordR[1] == coord.r) || (newFloorsSet[3] && newFloorCoordR[3] == coord.r)){
           coord.r = Math.floor(Math.random() * 4);
         }
 
@@ -1466,7 +1495,7 @@ draw = function(){
   if(generatedGame && (gameMode.maze || gameMode.both || gameMode.fall)){
     for(let floorIndex = 0; floorIndex < floors.length && !floors[floors.length - 1].finishedPop; floorIndex++){
       floors[floorIndex].doMovement(gameBall);
-      if(floors[floorIndex].startPosition.y - game.scrollPos <= -.1){
+      if(floors[floorIndex].startPosition.y - game.scrollPos <= -.9){
         delete floors[floorIndex];
         floors.splice(floorIndex, 1);
         floorIndex--;
@@ -1494,8 +1523,8 @@ draw = function(){
         }else if(gameMode.both){
           let randFrame = (Math.floor(Math.random() * 2));
           if(randFrame){
-            game.createMazeFrame(game.bottomOfFrame , 1);     
-            game.prevFrame.maze = true;       
+            game.createMazeFrame(game.bottomOfFrame + (game.prevFrame.maze ? mazeGap : moveGap), 1);
+            game.prevFrame.maze = true;
           }else{
             game.createMoveFrame(game.bottomOfFrame, 1);
             game.prevFrame.maze = false;
@@ -1550,6 +1579,7 @@ draw = function(){
           game.fall = false;
           popGame = false;
           poppedGame = false;
+          game.prevFrame.maze = false;
         }
       }
       text('Retry', resolution.x / 2, (resolution.y / 1.5))
