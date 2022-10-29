@@ -1458,13 +1458,15 @@ draw = function(){
     stroke(255,255,0);
     text('Select Game Mode', resolution.x / 2, (resolution.y / 3))
     noFill()
-    if(mouseX >= (resolution.x / 2.3) - (textWidth('Maze') / 2) && mouseX <= (resolution.x / 2.3) + (textWidth('Maze') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
+    let fullText = 'Maze     Both     Hop';
+    let fullTextWidth = textWidth(fullText)
+    if(mouseX >=  (resolution.x / 2) - (fullTextWidth / 2) - (textWidth('Maze') / 2) && mouseX <= (resolution.x / 2) - (fullTextWidth / 2) + (textWidth('Maze') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
       fill(247, 82, 121)
       if(mouseIsPressed){
         gameMode.maze = true;
       }
     }
-    text('Maze', resolution.x / 2.3, (resolution.y / 2.25))
+    text('Maze', (resolution.x / 2) - (fullTextWidth / 2), (resolution.y / 2.25))
     noFill()
     if(mouseX >= (resolution.x / 2) - (textWidth('Both') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Both') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
       fill(247, 82, 121)
@@ -1474,13 +1476,13 @@ draw = function(){
     }
     text('Both', resolution.x / 2, (resolution.y / 2.25))
     noFill()
-    if(mouseX >= (resolution.x / 1.775) - (textWidth('Hop') / 2) && mouseX <= (resolution.x / 1.775) + (textWidth('Hop') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
+    if(mouseX >= (resolution.x / 2) + (fullTextWidth / 2) - (textWidth('Hop') / 2) && mouseX <= (resolution.x / 2) + (fullTextWidth / 2) + (textWidth('Hop') / 2) && mouseY >= (resolution.y / 2.25) - 32 && mouseY <= (resolution.y / 2.25)){
       fill(247, 82, 121)
       if(mouseIsPressed){
         gameMode.fall = true;
       }
     }
-    text('Hop', resolution.x / 1.775, (resolution.y / 2.25))
+    text('Hop', (resolution.x / 2) + (fullTextWidth / 2), (resolution.y / 2.25))
     noFill()
     if(gameMode.maze || gameMode.both || gameMode.fall){
       gameBall = new ball(gameBallRatio, ballStartPosition);
@@ -1515,7 +1517,6 @@ draw = function(){
     if(!popGame){      
       if(game.bottomOfFrame - game.scrollPos <= heightOfGameScreen - (mazeGap / 2)){
         if(gameMode.maze){
-          console.log("created maze frame")
           game.createMazeFrame(game.bottomOfFrame + mazeGap, 1);
         }else if(gameMode.both){
           let randFrame = (Math.floor(Math.random() * 2));
@@ -1547,21 +1548,18 @@ draw = function(){
       gameBall.doMovement(game, floors, walls);
       game.displayBall(gameBall);
       gameBall.finishedPop = false;
-    }else{
-      console.log("ITS POPPED")
     }
   
     game.scroll(gameBall);
   
-    if((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 || gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
-      //game.fall = true;
-      //popGame = true;
+    if(((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 && gameBall.onFloor)|| gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
+      game.fall = true;
+      popGame = true;
     }
   
     if(game.fall || popGame){
       //game.gameFall(gameBall, floors, walls);
       if(!poppedGame){
-        console.log("popping game")
         game.gamePop(gameBall, floors, walls);
       }
       poppedGame = true;
@@ -1581,6 +1579,24 @@ draw = function(){
       }
       text('Retry', resolution.x / 2, (resolution.y / 1.5))
       noFill()
+      
+      if(mouseX >= (resolution.x / 2) - (textWidth('Change Mode') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Change Mode') / 2) && mouseY >= (resolution.y / 1.25) - 32 && mouseY <= (resolution.y / 1.25)){
+        fill(247, 82, 121)
+        if(mouseIsPressed){
+          generatedGame = false;
+          game.fall = false;
+          popGame = false;
+          poppedGame = false;
+          game.prevFrame.maze = false;
+          gameMode.maze = false;
+          gameMode.both = false;
+          gameMode.fall = false;
+          delete gameBall;
+        }
+      }
+      text('Change Mode', (resolution.x / 2), (resolution.y / 1.25))
+      noFill()
+
       game.displayGameBackground()
       text('Score',resolution.x / 2, (resolution.y / 2.25))
       fill(247, 82, 121)
