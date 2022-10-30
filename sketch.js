@@ -48,11 +48,15 @@ let holesize = gameBallRatio * 3;
 let floorSpeed = .0001;
 let mazeGap = .2;
 let moveGap = (frameSize * mazeGap) / 3;
+let popNextFloor = 0;
+let popNextF = 0;
 
 let walls = [];
+let poppingWalls = [];
 let wallHeight = -.06;
 let wallwidth = .03;
 let wallSlide = .005;
+
 
 //Whenever the window resizes, this function is called with the resolution variable already updated.
 function onWindowResize() {
@@ -152,11 +156,6 @@ class gameSystem{
     let topPosition = {x: wall.bottomPosition.x, y: wall.bottomPosition.y + wall.height}
     topPosition = g.c(topPosition);
 
-    if(!poppedGame){
-      erase();
-      line(bottomPosition.x, bottomPosition.y, topPosition.x, topPosition.y);
-      noErase();
-    }
     if(wall.popEffect){
       //console.log("doing pop effect")
       strokeWeight(wall.popEffect.duration/15);
@@ -177,6 +176,12 @@ class gameSystem{
         wall.finishedPop = true;
       }
       strokeWeight(1);  
+    }else{
+      if(!poppedGame){
+        erase();
+        line(bottomPosition.x, bottomPosition.y, topPosition.x, topPosition.y);
+        noErase();
+      }
     }
   }
   
@@ -185,12 +190,6 @@ class gameSystem{
     let endPosition = {x: floor.startPosition.x + floor.length, y: startPosition.y};
     endPosition = g.c(endPosition);
 
-    if(!poppedGame){
-      //console.log("showing lines")
-      erase();
-      line(startPosition.x, startPosition.y, endPosition.x, startPosition.y);
-      noErase();
-    } // else if( -v)
     if(floor.popEffect){
       //console.log("doing pop effect")
       strokeWeight(floor.popEffect.duration/15);
@@ -211,6 +210,13 @@ class gameSystem{
         floor.finishedPop = true;
       }
       strokeWeight(1);
+    }else{
+      if(!floor.finishedPop){
+        //console.log("showing lines")
+        erase();
+        line(startPosition.x, startPosition.y, endPosition.x, startPosition.y);
+        noErase();
+      }
     }
   }
 
@@ -226,80 +232,6 @@ class gameSystem{
       tempPosition.x += .005;
     }
 
-    if(!poppedGame){
-      let position = g.c(tempPosition);
-      let ballDiameter = this.perToPx(ball.ballDiameter);
-
-      translate(position.x, position.y);
-      rotate(ball.rotation);
-      image(ballImage, -(ballDiameter / 2), -(ballDiameter / 2), ballDiameter, ballDiameter);
-      stroke(255,255,0);
-      strokeWeight(2);
-      noFill();
-      if(ball.bounce){
-        ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
-        if(ball.justGotBounce > 1){
-          ball.justGotBounce /= 1.17;
-        } else {
-          ball.justGotBounce = 0;
-        }
-      }
-      resetMatrix();
-
-      if(position.x - (ballDiameter / 2) < this.position.startX){
-        translate(this.position.endX + (position.x -  this.position.startX), position.y);
-        rotate(ball.rotation);
-        stroke(255,255,0);
-        strokeWeight(2);
-        noFill();
-        if(ball.bounce){
-          ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
-          if(ball.justGotBounce > 1){
-            ball.justGotBounce /= 1.17;
-          } else {
-            ball.justGotBounce = 0;
-          }
-        }
-        image(ballImage, -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
-        resetMatrix();
-      }else if(position.x + (ballDiameter / 2) > this.position.endX){
-        translate(this.position.startX - (this.position.endX - position.x), position.y);
-        rotate(ball.rotation);
-        stroke(255,255,0);
-        strokeWeight(2);
-        noFill();
-        if(ball.bounce){
-          ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
-          if(ball.justGotBounce > 1){
-            ball.justGotBounce /= 1.17;
-          } else {
-            ball.justGotBounce = 0;
-          }
-        }
-        image(ballImage,  -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
-        resetMatrix();
-      }
-      
-      if(ball.bounceEffect){
-        strokeWeight(ball.bounceEffect.duration/15);
-        ball.bounceEffect.particles.forEach((particle, ind, arr) => {
-          let partPos = g.c(particle.position);
-          let partVel = {x: this.perToPx(particle.velocity.x), y: this.perToPx(particle.velocity.y)};
-          stroke(particle.color.r, particle.color.g, particle.color.b);
-          line(partPos.x, partPos.y, partPos.x + partVel.x, partPos.y + partVel.y);
-          arr[ind].position.x += particle.velocity.x;
-          arr[ind].position.y += particle.velocity.y;
-          arr[ind].velocity.y += 0.00015;
-        });
-        //let effectPos = g.c(ball.bounceEffect.position);
-        //ellipse(effectPos.x, effectPos.y - 20 + ball.bounceEffect.duration, ballDiameter+1 + 20 - ball.bounceEffect.duration, ballDiameter+1 + 20 - ball.bounceEffect.duration * 2);
-        ball.bounceEffect.duration -= 1;
-        if(ball.bounceEffect.duration == 0){
-          ball.bounceEffect = false;
-        }
-      }
-      strokeWeight(1);
-    }
     if(ball.popEffect){
       //console.log("doing pop effect")
       strokeWeight(ball.popEffect.duration/15);
@@ -320,6 +252,81 @@ class gameSystem{
         ball.finishedPop = true;
       }
       strokeWeight(1);
+    }else{
+      if(!ball.finishedPop){
+        let position = g.c(tempPosition);
+        let ballDiameter = this.perToPx(ball.ballDiameter);
+  
+        translate(position.x, position.y);
+        rotate(ball.rotation);
+        image(ballImage, -(ballDiameter / 2), -(ballDiameter / 2), ballDiameter, ballDiameter);
+        stroke(255,255,0);
+        strokeWeight(2);
+        noFill();
+        if(ball.bounce){
+          ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
+          if(ball.justGotBounce > 1){
+            ball.justGotBounce /= 1.17;
+          } else {
+            ball.justGotBounce = 0;
+          }
+        }
+        resetMatrix();
+  
+        if(position.x - (ballDiameter / 2) < this.position.startX){
+          translate(this.position.endX + (position.x -  this.position.startX), position.y);
+          rotate(ball.rotation);
+          stroke(255,255,0);
+          strokeWeight(2);
+          noFill();
+          if(ball.bounce){
+            ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
+            if(ball.justGotBounce > 1){
+              ball.justGotBounce /= 1.17;
+            } else {
+              ball.justGotBounce = 0;
+            }
+          }
+          image(ballImage, -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
+          resetMatrix();
+        }else if(position.x + (ballDiameter / 2) > this.position.endX){
+          translate(this.position.startX - (this.position.endX - position.x), position.y);
+          rotate(ball.rotation);
+          stroke(255,255,0);
+          strokeWeight(2);
+          noFill();
+          if(ball.bounce){
+            ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
+            if(ball.justGotBounce > 1){
+              ball.justGotBounce /= 1.17;
+            } else {
+              ball.justGotBounce = 0;
+            }
+          }
+          image(ballImage,  -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
+          resetMatrix();
+        }
+        
+        if(ball.bounceEffect){
+          strokeWeight(ball.bounceEffect.duration/15);
+          ball.bounceEffect.particles.forEach((particle, ind, arr) => {
+            let partPos = g.c(particle.position);
+            let partVel = {x: this.perToPx(particle.velocity.x), y: this.perToPx(particle.velocity.y)};
+            stroke(particle.color.r, particle.color.g, particle.color.b);
+            line(partPos.x, partPos.y, partPos.x + partVel.x, partPos.y + partVel.y);
+            arr[ind].position.x += particle.velocity.x;
+            arr[ind].position.y += particle.velocity.y;
+            arr[ind].velocity.y += 0.00015;
+          });
+          //let effectPos = g.c(ball.bounceEffect.position);
+          //ellipse(effectPos.x, effectPos.y - 20 + ball.bounceEffect.duration, ballDiameter+1 + 20 - ball.bounceEffect.duration, ballDiameter+1 + 20 - ball.bounceEffect.duration * 2);
+          ball.bounceEffect.duration -= 1;
+          if(ball.bounceEffect.duration == 0){
+            ball.bounceEffect = false;
+          }
+        }
+        strokeWeight(1);
+      }
     }
   }
 
@@ -343,14 +350,14 @@ class gameSystem{
     }
   }
 
-  gamePop(ball, floors, walls){
-    for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
-      floors[floorIndex].playPopEffect(60, 20, .03, {x: floors[floorIndex].startPosition.x + (floors[floorIndex].length / 2), y: floors[floorIndex].startPosition.y}, {x: floors[floorIndex].length, y: -0.3});
+  popThing(thing, type){
+    if(type == "floor"){
+      thing.playPopEffect(60, 20, .03, {x: thing.startPosition.x + (thing.length / 2), y: thing.startPosition.y}, {x: thing.length, y: -0.3});
+    }else if(type == "wall" ){
+      thing.playPopEffect(60, 20, .03, {x: thing.bottomPosition.x, y: thing.bottomPosition.y}, {x: 0.5, y: -0.3});
+    }else{
+      thing.playPopEffect(60, 20, .03, {x: thing.ballPosition.x, y: thing.ballPosition.y}, {x: 0.5, y: -0.3});
     }
-    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
-      walls[wallIndex].playPopEffect(60, 20, .03, {x: walls[wallIndex].bottomPosition.x, y: walls[wallIndex].bottomPosition.y}, {x: 0.5, y: -0.3});
-    }
-    ball.playPopEffect(60, 20, .03, {x: ball.ballPosition.x, y: ball.ballPosition.y}, {x: 0.5, y: -0.3});
   }
 
   generateGame(ball){
@@ -379,7 +386,7 @@ class gameSystem{
     floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
 
     let numOfFrames = (Math.floor(Math.random() * (totalFrames)) + 1);
-    console.log("numOfFrames: " + numOfFrames);
+    //console.log("numOfFrames: " + numOfFrames);
     if(gameMode.maze){
       this.createMazeFrame(startPosition.y + mazeGap, 1);
     }else if(gameMode.both){
@@ -396,7 +403,6 @@ class gameSystem{
   }
 
   createMazeFrame(floorLevel, numOfFrames){
-    console.log("creating maze frame")
     for(let frameIndex = 0; frameIndex < numOfFrames; frameIndex++){
         this.createMazeRow(floorLevel + (frameIndex * (mazeGap * frameSize)), frameSize);
     }
@@ -495,7 +501,6 @@ class gameSystem{
   }
   
   createMoveFrame(floorLevel, numOfFrames){
-    console.log("creating move frame")
     //let spacing1 = ((mazeGap * frameSize) * numOfFrames);
     //let spacing2 = floorLevel + (mazeGap * frameSize);
     //let spacing3 = (mazeGap * frameSize); // I think this one = .2 * 4 = .8 now is moveGap
@@ -716,6 +721,23 @@ class gameSystem{
       scrollSpeed -= scrollAcc;
       scrollSpeed = Math.max(scrollSpeed, resetScrollSpeed);
     }
+  }
+
+  deleteFloorsNWallsOffGame(){
+    for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+      if(floors[floorIndex].startPosition.y - game.scrollPos <= 0 || floors[floorIndex].startPosition.y - game.scrollPos >= heightOfGameScreen){
+       delete floors[floorIndex];
+       floors.splice(floorIndex, 1);
+       floorIndex--;
+      }
+    }
+    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
+      if(walls[wallIndex].bottomPosition.y - game.scrollPos <= 0 || walls[wallIndex].bottomPosition.y - game.scrollPos >= heightOfGameScreen){
+       delete walls[wallIndex];
+       walls.splice(wallIndex, 1);
+       wallIndex--;
+      }
+    }    
   }
 }
 
@@ -1123,7 +1145,7 @@ class ball{
 
     for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
       if(walls[wallIndex].checkIfBallHitWallMovingLeft(this.prevPosition, this)){
-        console.log("left")
+      //  console.log("left")
         let momentumOfWall = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
         nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2);
         this.wallHit.left = true;
@@ -1145,7 +1167,7 @@ class ball{
           }
         }
       }else if(walls[wallIndex].checkIfBallHitWallMovingRight(this.prevPosition, this)){
-        console.log("right")
+      //  console.log("right")
         let momentumOfWall = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
         nextBallPosition.x = (walls[wallIndex].bottomPosition.x + (this.ballDiameter / 2));
         //console.log("walls[wallIndex].bottomPosition.x: " + walls[wallIndex].bottomPosition.x)
@@ -1187,6 +1209,10 @@ class ball{
 
     if(this.wallHit.left && this.wallHit.right){
       game.fall = true;
+      popGame = true;
+      game.deleteFloorsNWallsOffGame();
+      popNextF = floors.length - 1;
+      game.popThing(this, "ball");
     }
 
     this.ballPosition.x = nextBallPosition.x;
@@ -1492,19 +1518,25 @@ draw = function(){
   }
 
   if(generatedGame && (gameMode.maze || gameMode.both || gameMode.fall)){
-    for(let floorIndex = 0; floorIndex < floors.length && !floors[floors.length - 1].finishedPop; floorIndex++){
-      floors[floorIndex].doMovement(gameBall);
-      if(floors[floorIndex].startPosition.y - game.scrollPos <= -.9){
-        delete floors[floorIndex];
-        floors.splice(floorIndex, 1);
-        floorIndex--;
+    for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+      if(!popGame){
+        floors[floorIndex].doMovement(gameBall);
+        if(floors[floorIndex].startPosition.y - game.scrollPos <= -.9){
+          delete floors[floorIndex];
+          floors.splice(floorIndex, 1);
+          floorIndex--;
+        }else{
+          game.displayFloor(floors[floorIndex]);
+        }
       }else{
-        game.displayFloor(floors[floorIndex]);
+        if(!floors[floorIndex].finishedPop){
+          game.displayFloor(floors[floorIndex]);
+        }
       }
     }
   
     if(gameBall.onFloor){
-      for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+      for(let floorIndex = 0; floorIndex < floors.length && !popGame; floorIndex++){
         if(gameBall.onFloor.isSlowerFloor(gameBall, floors[floorIndex])){
           gameBall.onFloor.ball = false;
           floors[floorIndex].setBallOnFloor(gameBall);
@@ -1533,36 +1565,84 @@ draw = function(){
       }
     } 
   
-    for(let wallIndex = 0; wallIndex < walls.length && !walls[walls.length - 1].finishedPop; wallIndex++){
-      walls[wallIndex].doMovement();
-      if(walls[wallIndex].bottomPosition.y - game.scrollPos <= -.1){
-        delete walls[wallIndex];
-        walls.splice(wallIndex, 1);
-        wallIndex--;
+    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
+      if(!popGame){
+        walls[wallIndex].doMovement();
+        if(walls[wallIndex].bottomPosition.y - game.scrollPos <= -.1){
+          delete walls[wallIndex];
+          walls.splice(wallIndex, 1);
+          wallIndex--;
+        }else{
+          game.displayWall(walls[wallIndex]);
+        }
       }else{
-        game.displayWall(walls[wallIndex]);
+        if(!walls[wallIndex].finishedPop){
+          game.displayWall(walls[wallIndex]);  
+        }
       }
     }
-
-    if(!gameBall.finishedPop || !popGame){
+    
+    if(!popGame){
+      gameBall.finishedPop = false;
       gameBall.doMovement(game, floors, walls);
       game.displayBall(gameBall);
-      gameBall.finishedPop = false;
+      game.scroll(gameBall);
+    }else{
+      if(!gameBall.finishedPop){
+        console.log("displaying pop")
+        game.displayBall(gameBall);
+      }
     }
   
-    game.scroll(gameBall);
-  
-    if(((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 && gameBall.onFloor)|| gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && game.fall != true){
+    if(((gameBall.ballPosition.y + gameBall.ballDiameter - game.scrollPos <= 0 && gameBall.onFloor)|| gameBall.ballPosition.y - gameBall.ballDiameter - game.scrollPos >= heightOfGameScreen) && !popGame){
       game.fall = true;
       popGame = true;
+      game.deleteFloorsNWallsOffGame();
+      popNextF = floors.length - 1;
     }
   
     if(game.fall || popGame){
       //game.gameFall(gameBall, floors, walls);
       if(!poppedGame){
-        game.gamePop(gameBall, floors, walls);
+        if(gameBall.ballPosition.y - game.scrollPos <= 0 || gameBall.ballPosition.y - game.scrollPos >= heightOfGameScreen){
+          gameBall.finishedPop = true;
+        }
+
+        if(popNextF < 0){
+          poppedGame = true;
+        }else{
+          if(popNextFloor == 45){
+            while(popNextF >= 0 && (floors[popNextF].popEffect || floors[popNextF].finishedPop)){
+              popNextF--;
+            }
+            if(popNextF < 0){
+              poppedGame = true;
+            }else{
+              let tempPopNextF = popNextF;
+              for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+                if(floors[floorIndex].startPosition.y > floors[tempPopNextF].startPosition.y && !(floors[floorIndex].popEffect || floors[floorIndex].finishedPop)){
+                  tempPopNextF = floorIndex;
+                }
+              }
+
+              game.popThing(floors[tempPopNextF], "floor");
+              for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
+                if(floors[floorIndex].startPosition.y == floors[tempPopNextF].startPosition.y && !(floors[floorIndex].popEffect || floors[floorIndex].finishedPop)){
+                  game.popThing(floors[floorIndex], "floor");
+                }
+              }
+              for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
+                if(walls[wallIndex].bottomPosition.y == floors[tempPopNextF].startPosition.y && !(walls[wallIndex].popEffect || walls[wallIndex].finishedPop)){
+                  game.popThing(walls[wallIndex], "wall");
+                }
+              }
+              popNextFloor = 0;
+            }
+          }
+        }
+        popNextFloor++;
       }
-      poppedGame = true;
+      
   
       textSize(32);
       stroke(255,255,0);
@@ -1575,6 +1655,7 @@ draw = function(){
           popGame = false;
           poppedGame = false;
           game.prevFrame.maze = false;
+          popNextFloor = 0;
         }
       }
       text('Retry', resolution.x / 2, (resolution.y / 1.5))
@@ -1592,6 +1673,7 @@ draw = function(){
           gameMode.both = false;
           gameMode.fall = false;
           delete gameBall;
+          popNextFloor = 0;
         }
       }
       text('Change Mode', (resolution.x / 2), (resolution.y / 1.25))
@@ -1617,6 +1699,4 @@ draw = function(){
 
 /*
 http://localhost:8000/main.html
-
 */
-
