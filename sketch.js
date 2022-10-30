@@ -15,7 +15,6 @@ let heightOfGameScreen;
 let scrollSpeed = 0.002;//.0005;
 let fallingGameSpeed = .02;
 let gameScore = 0;
-let gamepPrevScore = 0;
 let gameScoreSpeed = 1;
 let resetgameScoreSpeed = gameScoreSpeed;
 let maxScrollSpeed = .004;
@@ -27,6 +26,7 @@ let popGame = false;
 let poppedGame = false;
 let frameSize = 4;
 let totalFrames = 4; // Maximum of 2 pages worth of frame
+let scoreMult = 5;
 
 let ballImage;
 let ballStartPosition = {x: .5, y: .4};
@@ -41,9 +41,9 @@ let ballFricConst = .00018;
 let ballBounce = .009;
 let bounceFric = -.0008;
 let floorEffectSpeed = 1;
+let furthestY = 0;
 
 let floors = [];
-//let numOfFloors = 10;
 let holesize = gameBallRatio * 3;
 let floorSpeed = .0001;
 let mazeGap = .2;
@@ -361,12 +361,12 @@ class gameSystem{
   }
 
   generateGame(ball){
-    if(gameScore != 0){
+    if(gameScore >= 0){
       gameScore = 0;
-      gamepPrevScore = 0;
       gameScoreSpeed = resetgameScoreSpeed;
       scrollSpeed = resetScrollSpeed;
       this.scrollPos = 0;
+      furthestY = 0;
     }
     //*
     ball.regenerate(ballStartPosition);
@@ -707,7 +707,7 @@ class gameSystem{
     brickCanvas.textSize(32);    
     brickCanvas.stroke(255,255,0);
     brickCanvas.text('Score', (((resolution.x - this.position.endX) / 2) + this.position.endX) , (resolution.y / 6))
-    brickCanvas.text(gameScore, (((resolution.x - this.position.endX) / 2) + this.position.endX) , (resolution.y / 6) + 50)
+    brickCanvas.text(Math.floor(gameScore), (((resolution.x - this.position.endX) / 2) + this.position.endX) , (resolution.y / 6) + 50)
     brickCanvas.noFill()    
   }
 
@@ -1583,7 +1583,7 @@ draw = function(){
     }
     
     if(!popGame){
-      gameBall.finishedPop = false;
+      gameBall.finishedPop = false;      
       gameBall.doMovement(game, floors, walls);
       game.displayBall(gameBall);
       game.scroll(gameBall);
@@ -1682,11 +1682,15 @@ draw = function(){
       game.displayGameBackground()
       text('Score',resolution.x / 2, (resolution.y / 2.25))
       fill(247, 82, 121)
-      text(gameScore, resolution.x / 2, (resolution.y / 2))
+      text(Math.floor(gameScore), resolution.x / 2, (resolution.y / 2))
       noFill()
     }else{
-      gamepPrevScore = gameScore;
-      gameScore += gameScoreSpeed;
+      let ballDiff = 0;
+      if(gameBall.prevPosition.y < gameBall.ballPosition.y && furthestY < gameBall.ballPosition.y){
+        ballDiff = gameBall.ballPosition.y - gameBall.prevPosition.y;
+        furthestY = gameBall.ballPosition.y;
+      }
+      gameScore += ballDiff * scoreMult;
       game.displayScore();
     }
   }
