@@ -411,6 +411,7 @@ class gameSystem{
 
   createMazeRow(floorLevel, numOfFloors){
     let addWallMov = (Math.floor(Math.random() * 2))
+    addWallMov = 1; //FOR TESTING PURPOSES
     let begHole = random(1 - holesize);
     let begWall = begHole;
     for(let floorNum = 0; floorNum < numOfFloors; floorNum++){
@@ -451,7 +452,7 @@ class gameSystem{
         let wallMove = {hor: (Math.floor(Math.random() * 2)), ver: (Math.floor(Math.random() * 2))}
         //wallVelocity = {x: 0.005, y: -.001};
         if(!wallMove.hor){
-          wallVelocity.x = 0;
+          //wallVelocity.x = 0; FORT TESTING PURPOSES
         }else{
           if(!velocityDir.x){
             wallVelocity.x *= -1;
