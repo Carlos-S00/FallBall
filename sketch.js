@@ -960,7 +960,6 @@ class ball{
       this.wallHit = {left: false, right: false, vertical: false};
       this.prevHit = {left: false, right: false}
       this.reflected = false;
-      this.wallBounce = false;
       this.finishedPop = false;
       this.readyToJumpInc = 0;
   }
@@ -1073,7 +1072,6 @@ class ball{
       nextBallPosition.y = this.ballPosition.y;
       this.bounce = true;
       this.justGotBounce = 80;
-      this.wallBounce = false;
       this.readyToJump = false;
       this.readyToJumpInc = 0;
     }
@@ -1087,8 +1085,10 @@ class ball{
     nextBallPosition.x = this.ifBallOutOfGame(nextBallPosition.x)
 
     nextBallPosition.y = this.moveVertically(nextBallPosition.y);
-
+    
+    let prevFloor = 0;
     if(this.onFloor){
+      prevFloor = this.onFloor;
       this.readyToJumpInc++;
       if(keyIsDown(UP_ARROW) && this.readyToJumpInc > 20){
         this.ballVelocity.y = .025;
@@ -1125,7 +1125,12 @@ class ball{
             highestFloor = hitFloors[floorIndex];
           }
         }
-        this.bounceOnFloor(highestFloor, nextBallPosition);
+        if(prevFloor && prevFloor != highestFloor && highestFloor.startPosition.y == prevFloor.startPosition.y){
+          highestFloor.setBallOnFloor(this);
+          nextBallPosition.y = highestFloor.startPosition.y - (this.ballDiameter / 2);
+        }else{
+          this.bounceOnFloor(highestFloor, nextBallPosition);
+        }
       }
     }
     
