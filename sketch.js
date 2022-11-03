@@ -862,6 +862,7 @@ class wall{
       if((prevRightSideOfBall <= this.prevPosition.x - 1 && currRightSideOfBall >= this.bottomPosition.x - 1) ||
          (prevRightSideOfBall <= this.prevPosition.x && currRightSideOfBall >= this.bottomPosition.x && currRightSideOfBall <= 1) ||
          (prevRightSideOfBall <= this.prevPosition.x + 1 && currRightSideOfBall >= this.bottomPosition.x + 1)){
+          console.log("WallMovingLeft1")
           return true;
       }else if(ball.onFloor && ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x != 0){
         let floorMovement = ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x;
@@ -870,6 +871,7 @@ class wall{
         if((prevRightSideOfBall <= this.prevPosition.x - 1 && currRightSideOfBall >= this.bottomPosition.x - 1) ||
            (prevRightSideOfBall <= this.prevPosition.x && currRightSideOfBall >= this.bottomPosition.x && currRightSideOfBall <= 1) ||
            (prevRightSideOfBall <= this.prevPosition.x + 1 && currRightSideOfBall >= this.bottomPosition.x + 1)){
+            console.log("WallMovingLeft2")
             return true;
           }else{
             return false;
@@ -888,12 +890,14 @@ class wall{
       if((prevLeftSideOfBall  >= this.prevPosition.x - 1 && currLeftSideOfBall  <= this.bottomPosition.x - 1) ||
          (prevLeftSideOfBall  >= this.prevPosition.x && currLeftSideOfBall  <= this.bottomPosition.x && currLeftSideOfBall >= 0) ||
          (prevLeftSideOfBall  >= this.prevPosition.x + 1 && currLeftSideOfBall  <= this.bottomPosition.x + 1)){
+          console.log("WallMovingRight1")
           //console.log(prevLeftSideOfBall)
           //console.log(this.prevPosition.x)
           //console.log(currLeftSideOfBall)
           //console.log("Inside Bottom: " + this.bottomPosition.x)
           return true;
         }else if(ball.onFloor && ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x != 0){
+          console.log("WallMovingRight2")
           let floorMovement = ball.onFloor.startPosition.x - ball.onFloor.prevPosition.x;
           let prevLeftSideOfBall = prevPosition.x - (ball.ballDiameter / 2) - floorMovement;
           let currLeftSideOfBall = ball.ballPosition.x - (ball.ballDiameter / 2) - floorMovement;
@@ -911,8 +915,10 @@ class wall{
     }
 
     checkIfBallHitWallVertically(prevPosition, ball){
-      if(ball.ballPosition.x - (ball.ballDiameter / 2) <= this.bottomPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) >= this.bottomPosition.x){
-        if(ball.ballPosition.y + (ball.ballDiameter / 2) >= this.bottomPosition.y + this.height && prevPosition.y + (ball.ballDiameter / 2) <= this.bottomPosition.y){
+      if(ball.ballPosition.x - (ball.ballDiameter / 2) < this.bottomPosition.x && ball.ballPosition.x + (ball.ballDiameter / 2) > this.bottomPosition.x){
+        if(ball.ballPosition.y + (ball.ballDiameter / 2) >= this.bottomPosition.y + this.height &&
+        prevPosition.y + (ball.ballDiameter / 2) <= this.bottomPosition.y - this.height && 
+        ball.ballPosition.y - (ball.ballDiameter / 2) <= this.bottomPosition.y + this.height){
           return true;
         }
       }
@@ -933,6 +939,17 @@ class wall{
     }
     this.popEffect = {particles: particles, duration: duration};
   }
+
+  WallInsideBall(xPos, yPos, ballDiameter){
+    if(yPos + (ballDiameter / 2) >= this.bottomPosition.y + this.height &&
+       yPos - (ballDiameter / 2) <= this.bottomPosition.y &&
+       xPos + (ballDiameter / 2)  >= this.bottomPosition.x && 
+       xPos - (ballDiameter / 2)  <= this.bottomPosition.x
+    ){
+      return true;
+    }
+    return false;
+  }
 }
 
 class ball{
@@ -947,7 +964,7 @@ class ball{
       this.justGotBounce = 0;
       this.bounce = true;
       this.bounceFric = false;
-      this.wallHit = {left: false, right: false};
+      this.wallHit = {left: false, right: false, vertical: false};
       this.prevHit = {left: false, right: false}
       this.reflected = false;
       this.wallBounce = false;
@@ -1132,93 +1149,8 @@ class ball{
     this.prevPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
     this.ballPosition.x = nextBallPosition.x;
     this.ballPosition.y = nextBallPosition.y;
-    if(this.wallHit.left){
-      this.prevHit.left = true;
-    }else{
-      this.prevHit.left = false;
-    }
-    if(this.wallHit.right){
-      this.prevHit.right = true;
-    }else{
-      this.prevHit.right = false;
-    }
-    this.wallHit = {left: false, right: false};
-
-    for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
-      if(walls[wallIndex].checkIfBallHitWallMovingLeft(this.prevPosition, this)){
-      //  console.log("left")
-        let momentumOfWall = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
-        nextBallPosition.x = walls[wallIndex].bottomPosition.x - (this.ballDiameter / 2);
-        this.wallHit.left = true;
-
-        if(nextBallPosition.x < 0){
-          nextBallPosition.x += 1;
-        }
-
-        if(momentumOfWall >= 0){
-          this.ballVelocity.x = 0
-          totalBallRoll = 0;
-        }else{
-          if(this.onFloor && (this.onFloor.startPosition.x - this.onFloor.prevPosition.x == 0 || this.onFloor.startPosition.x - this.onFloor.prevPosition.x != momentumOfWall)){
-            //console.log("added left")
-            this.ballVelocity.x = momentumOfWall;
-            totalBallRoll = momentumOfWall;
-          }else{
-            totalBallRoll = 0;
-          }
-        }
-      }else if(walls[wallIndex].checkIfBallHitWallMovingRight(this.prevPosition, this)){
-      //  console.log("right")
-        let momentumOfWall = walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x;
-        nextBallPosition.x = (walls[wallIndex].bottomPosition.x + (this.ballDiameter / 2));
-        //console.log("walls[wallIndex].bottomPosition.x: " + walls[wallIndex].bottomPosition.x)
-        //console.log("nextBallPosition.x left side : " + (nextBallPosition.x - (this.ballDiameter / 2)))
-        this.wallHit.right = true;
-
-        if(nextBallPosition.x > 1){
-          nextBallPosition.x -= 1;
-        }
-
-        if(momentumOfWall <= 0){
-          this.ballVelocity.x = 0
-          totalBallRoll = 0;
-        }else{
-          if(this.onFloor && (this.onFloor.startPosition.x - this.onFloor.prevPosition.x == 0 || this.onFloor.startPosition.x - this.onFloor.prevPosition.x != momentumOfWall)){
-            //console.log("added right")
-            this.ballVelocity.x = momentumOfWall;
-            totalBallRoll = momentumOfWall;
-          }else{
-            totalBallRoll = 0;
-          }
-        }
-      }else if(walls[wallIndex].checkIfBallHitWallVertically(this.prevPosition, this)){
-        //console.log("vertically")
-        if(!this.wallBounce){
-          this.bounceOnWall(walls[wallIndex], nextBallPosition);
-        }else{
-          if(this.ballPosition.x - (this.ballDiameter / 4) <= walls[wallIndex].bottomPosition.x && this.ballPosition.x + (this.ballDiameter/ 4) <= walls[wallIndex].bottomPosition.x){
-            nextBallPosition.x -= wallSlide;
-          }else{
-            nextBallPosition.x += wallSlide;
-          }
-        }
-        if(nextBallPosition.x > 1 || nextBallPosition < 0){
-          nextBallPosition.x -= 1;
-        }
-      }
-    }
-
-    if(this.wallHit.left && this.wallHit.right){
-      game.fall = true;
-      popGame = true;
-      game.deleteFloorsNWallsOffGame();
-      popNextF = floors.length - 1;
-      game.popThing(this, "ball");
-    }
-
-    this.ballPosition.x = nextBallPosition.x;
-    this.ballPosition.y = nextBallPosition.y;
     this.rotation += ((40 * (totalBallRoll)) / (PI * this.ballDiameter)) * 2 * PI;
+    //console.log("///////////////////////////")
   }
 
   regenerate(){
@@ -1563,12 +1495,50 @@ draw = function(){
         }else{
           game.createMoveFrame(game.bottomOfFrame, 1);
         }
-      }
+      }      
+      gameBall.doMovement(game, floors, walls);
     } 
   
+    if(gameBall.wallHit.left){
+      gameBall.prevHit.left = true;
+    }else{
+      gameBall.prevHit.left = false;
+    }
+    if(gameBall.wallHit.right){
+      gameBall.prevHit.right = true;
+    }else{
+      gameBall.prevHit.right = false;
+    }
+    gameBall.wallHit = {left: 0, right: 0, vertical: 0};
+
     for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
       if(!popGame){
         walls[wallIndex].doMovement();
+        //*
+        if(walls[wallIndex].WallInsideBall(gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
+          if(gameBall.ballPosition.x > walls[wallIndex].bottomPosition.x){
+            gameBall.ballPosition.x =  walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2);
+            gameBall.wallHit.right = true;
+          }else{
+            gameBall.ballPosition.x =  walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2);
+            gameBall.wallHit.left = true;       
+          }
+        }else if(gameBall.ballPosition.x - (gameBall.ballDiameter / 2) < 0){
+          console.log("inside here 1")
+          if(walls[wallIndex].WallInsideBall(1 + gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
+            console.log("inside again 1")
+            gameBall.ballPosition.x =  (walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2)) - 1;
+            gameBall.wallHit.right = true;
+          }
+        }else if(gameBall.ballPosition.x + (gameBall.ballDiameter / 2) > 1){
+          console.log("inside here 2")
+          if(walls[wallIndex].WallInsideBall(gameBall.ballPosition.x - 1, gameBall.ballPosition.y, gameBall.ballDiameter)){
+            console.log("inside again 2")
+            gameBall.ballPosition.x =  (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2)) + 1;
+            gameBall.wallHit.left = true;
+          }
+        }
+        //*/
         if(walls[wallIndex].bottomPosition.y - game.scrollPos <= -.1){
           delete walls[wallIndex];
           walls.splice(wallIndex, 1);
@@ -1582,15 +1552,40 @@ draw = function(){
         }
       }
     }
+    //*
+    let wallsTouched = {left: 0, right: 0};
+    for(let wallIndex = 0; wallIndex < walls.length && !popGame; wallIndex++){
+      if(walls[wallIndex].WallInsideBall(gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
+        if(gameBall.ballPosition.x > walls[wallIndex].bottomPosition.x){
+          wallsTouched.right++;
+        }else{ 
+          wallsTouched.left++;
+        }
+      }/*else if(walls[wallIndex].WallInsideBall(1 + gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
+          wallsTouched.right++;
+      }else if(walls[wallIndex].WallInsideBall(1 - gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
+          wallsTouched.left++;
+      }
+      //*/
+
+      if(wallsTouched.left > 0 && wallsTouched.right > 0){
+        console.log("FINAL")
+        game.fall = true;
+        popGame = true;
+        game.deleteFloorsNWallsOffGame();
+        popNextF = floors.length - 1;
+        game.popThing(gameBall, "ball");        
+      }
+    }
+    //*/
     
     if(!popGame){
-      gameBall.finishedPop = false;      
-      gameBall.doMovement(game, floors, walls);
+      gameBall.finishedPop = false;
       game.displayBall(gameBall);
       game.scroll(gameBall);
     }else{
       if(!gameBall.finishedPop){
-        console.log("displaying pop")
+        //console.log("displaying pop")
         game.displayBall(gameBall);
       }
     }
