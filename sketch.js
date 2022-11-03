@@ -485,12 +485,13 @@ class gameSystem{
         }
         walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
         
-        while((begWall >= begHole && begWall <= begHole + holesize) || 
+        while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 ||
         (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || begWall + holesize > 1){
           begWall = random()
         }
 
         bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
+        //bottomPosition = {x: .051, y: floorLevel + (floorNum * mazeGap)}; //FOR TESTING PURPOSES
         height = wallHeight;
         wallVelocity = {x: 0.005, y: 0};
 
@@ -960,6 +961,7 @@ class ball{
       this.ballVelocity = {x: 0, y: 0};
       this.onFloor = false;
       this.rotation = 0;
+      this.totalBallRoll = 0;
       this.addFloorVelocity = {x: 0, y: 0};
       this.justGotBounce = 0;
       this.bounce = true;
@@ -980,6 +982,9 @@ class ball{
       if(this.ballVelocity.x > 0){
         this.ballVelocity.x -= ballAcc;
       }
+      if(this.wallHit.right){
+        this.ballVelocity.x = 0;
+      }
 
     }else if(keyIsDown(RIGHT_ARROW)){
       if(this.ballVelocity.x < maxMoveSpeed){
@@ -988,6 +993,9 @@ class ball{
 
       if(this.ballVelocity.x < 0){
         this.ballVelocity.x += ballAcc;
+      }
+      if(this.wallHit.left){
+        this.ballVelocity.x = 0;
       }
 
     }else{
@@ -1110,7 +1118,7 @@ class ball{
     let nextBallPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
 
     nextBallPosition.x = this.moveHorizontally(nextBallPosition.x);
-    let totalBallRoll = nextBallPosition.x - this.ballPosition.x;
+    this.totalBallRoll = nextBallPosition.x - this.ballPosition.x;
     nextBallPosition.x = this.ifBallOutOfGame(nextBallPosition.x)
 
     nextBallPosition.y = this.moveVertically(nextBallPosition.y);
@@ -1149,7 +1157,7 @@ class ball{
     this.prevPosition = {x: this.ballPosition.x, y: this.ballPosition.y};
     this.ballPosition.x = nextBallPosition.x;
     this.ballPosition.y = nextBallPosition.y;
-    this.rotation += ((40 * (totalBallRoll)) / (PI * this.ballDiameter)) * 2 * PI;
+    //this.rotation += ((40 * (totalBallRoll)) / (PI * this.ballDiameter)) * 2 * PI;
     //console.log("///////////////////////////")
   }
 
@@ -1510,6 +1518,7 @@ draw = function(){
       gameBall.prevHit.right = false;
     }
     gameBall.wallHit = {left: 0, right: 0, vertical: 0};
+    let wallsTouched = {left: 0, right: 0};
 
     for(let wallIndex = 0; wallIndex < walls.length; wallIndex++){
       if(!popGame){
@@ -1517,25 +1526,33 @@ draw = function(){
         //*
         if(walls[wallIndex].WallInsideBall(gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
           if(gameBall.ballPosition.x > walls[wallIndex].bottomPosition.x){
+            //console.log("added 1")
+            gameBall.totalBallRoll -= gameBall.ballPosition.x - (walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2));
             gameBall.ballPosition.x =  walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2);
             gameBall.wallHit.right = true;
+            wallsTouched.right++;
           }else{
+            //console.log("added 2")
+            gameBall.totalBallRoll -= gameBall.ballPosition.x - (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2));
             gameBall.ballPosition.x =  walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2);
-            gameBall.wallHit.left = true;       
+            gameBall.wallHit.left = true;
+            wallsTouched.left++;
           }
         }else if(gameBall.ballPosition.x - (gameBall.ballDiameter / 2) < 0){
-          console.log("inside here 1")
+          //console.log("inside here 1")
           if(walls[wallIndex].WallInsideBall(1 + gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
-            console.log("inside again 1")
+            //console.log("inside again 1")
             gameBall.ballPosition.x =  (walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2)) - 1;
             gameBall.wallHit.right = true;
+            wallsTouched.right++;
           }
         }else if(gameBall.ballPosition.x + (gameBall.ballDiameter / 2) > 1){
-          console.log("inside here 2")
+          //console.log("inside here 2")
           if(walls[wallIndex].WallInsideBall(gameBall.ballPosition.x - 1, gameBall.ballPosition.y, gameBall.ballDiameter)){
-            console.log("inside again 2")
+            //console.log("inside again 2")
             gameBall.ballPosition.x =  (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2)) + 1;
             gameBall.wallHit.left = true;
+            wallsTouched.left++;
           }
         }
         //*/
@@ -1552,35 +1569,20 @@ draw = function(){
         }
       }
     }
-    //*
-    let wallsTouched = {left: 0, right: 0};
-    for(let wallIndex = 0; wallIndex < walls.length && !popGame; wallIndex++){
-      if(walls[wallIndex].WallInsideBall(gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
-        if(gameBall.ballPosition.x > walls[wallIndex].bottomPosition.x){
-          wallsTouched.right++;
-        }else{ 
-          wallsTouched.left++;
-        }
-      }/*else if(walls[wallIndex].WallInsideBall(1 + gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
-          wallsTouched.right++;
-      }else if(walls[wallIndex].WallInsideBall(1 - gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
-          wallsTouched.left++;
-      }
-      //*/
 
-      if(wallsTouched.left > 0 && wallsTouched.right > 0){
-        console.log("FINAL")
-        game.fall = true;
-        popGame = true;
-        game.deleteFloorsNWallsOffGame();
-        popNextF = floors.length - 1;
-        game.popThing(gameBall, "ball");        
-      }
+    if(wallsTouched.left > 0 && wallsTouched.right > 0){
+      console.log("FINAL")
+      game.fall = true;
+      popGame = true;
+      game.deleteFloorsNWallsOffGame();
+      popNextF = floors.length - 1;
+      game.popThing(gameBall, "ball");
     }
-    //*/
     
     if(!popGame){
+      //console.log("left: " + wallsTouched.left + " right: " + wallsTouched.right)
       gameBall.finishedPop = false;
+      gameBall.rotation += ((40 * (gameBall.totalBallRoll)) / (PI * gameBall.ballDiameter)) * 2 * PI;
       game.displayBall(gameBall);
       game.scroll(gameBall);
     }else{
