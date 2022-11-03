@@ -410,11 +410,11 @@ class gameSystem{
   }
 
   createMazeRow(floorLevel, numOfFloors){
-    let addWallMov = (Math.floor(Math.random() * 2))
-    addWallMov = 1; //FOR TESTING PURPOSES
+    //addWallMov = 1; //FOR TESTING PURPOSES
     let begHole = random(1 - holesize);
     let begWall = begHole;
     for(let floorNum = 0; floorNum < numOfFloors; floorNum++){
+      let addWallMov = (Math.floor(Math.random() * 2))
       while(((begHole >= this.prevHole && begHole <= this.prevHole + holesize) ||
             (begHole + holesize >= this.prevHole && begHole + holesize <= this.prevHole + holesize))){
         begHole = random(1 - holesize);
@@ -422,7 +422,7 @@ class gameSystem{
       begWall = begHole;
       this.prevHole = begHole;
 
-      while((begWall >= begHole && begWall <= begHole + holesize) || 
+      while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 || begWall < .003 || begWall > .997 ||
             (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || begWall + holesize > 1){
         begWall = random()
       }
@@ -448,18 +448,10 @@ class gameSystem{
         insideMoveFun = function(){}
         walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
       }else{
-        let velocityDir = {x: (Math.floor(Math.random() * 2)), y: (Math.floor(Math.random() * 2))}
-        let wallMove = {hor: (Math.floor(Math.random() * 2)), ver: (Math.floor(Math.random() * 2))}
+        let velocityDir = (Math.floor(Math.random() * 2));
         //wallVelocity = {x: 0.005, y: -.001};
-        if(!wallMove.hor){
-          //wallVelocity.x = 0; FORT TESTING PURPOSES
-        }else{
-          if(!velocityDir.x){
-            wallVelocity.x *= -1;
-          }
-        }
-        if(!wallMove.ver){
-          wallVelocity.y = 0;
+        if(!velocityDir){
+          wallVelocity.x *= -1;
         }
         let beginNEndPositionX = {begin: 0, end: 1};
         let beginNEndPosition = {begin: 0, end: heightOfGameScreen};
@@ -485,16 +477,15 @@ class gameSystem{
         }
         walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
         
-        while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 ||
+        begWall = random()
+        while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 || begWall < .003 || begWall > .997 ||
         (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || begWall + holesize > 1){
           begWall = random()
         }
 
         bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
-        //bottomPosition = {x: .051, y: floorLevel + (floorNum * mazeGap)}; //FOR TESTING PURPOSES
+        //bottomPosition = {x: .997, y: floorLevel + (floorNum * mazeGap)}; //FOR TESTING PURPOSES .003 .997
         height = wallHeight;
-        wallVelocity = {x: 0.005, y: 0};
-
         moveVars = false;
         insideMoveFun = function(){}
         walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
@@ -971,6 +962,7 @@ class ball{
       this.reflected = false;
       this.wallBounce = false;
       this.finishedPop = false;
+      this.readyToJumpInc = 0;
   }
 
   moveHorizontally(nextXPosition){
@@ -1082,36 +1074,9 @@ class ball{
       this.bounce = true;
       this.justGotBounce = 80;
       this.wallBounce = false;
+      this.readyToJump = false;
+      this.readyToJumpInc = 0;
     }
-  }
-
-  bounceOnWall(wall, nextBallPosition){
-    let wallVelocity = {x: wall.bottomPosition.x - wall.prevPosition.x, y: wall.bottomPosition.y - wall.prevPosition.y};
-    let relativeVal;
-    let absoluteVal;
-    if(this.ballPosition.x - (this.ballDiameter / 4) <= wall.bottomPosition.x && this.ballPosition.x + (this.ballDiameter/ 4) >= wall.bottomPosition.x){
-      relativeVal = {x: this.ballVelocity.x - wallVelocity.x, y: this.ballVelocity.y - wallVelocity.y};
-      absoluteVal = {x: relativeVal.x + wallVelocity.x, y: -relativeVal.y + wallVelocity.y};      
-    }else if(this.ballPosition.x - (this.ballDiameter / 4) <= wall.bottomPosition.x && this.ballPosition.x + (this.ballDiameter/ 4) <= wall.bottomPosition.x || 
-             this.ballPosition.x - (this.ballDiameter / 4) >= wall.bottomPosition.x && this.ballPosition.x + (this.ballDiameter/ 4) >= wall.bottomPosition.x){
-      relativeVal = {x: this.ballVelocity.x - wallVelocity.x, y: this.ballVelocity.y - wallVelocity.y};
-      absoluteVal = {x: -relativeVal.x + wallVelocity.x, y: -relativeVal.y + wallVelocity.y};      
-    }
-    if(relativeVal.y > .009){
-      nextBallPosition.y = wall.bottomPosition.y + wall.height - (this.ballDiameter / 2);
-      this.ballVelocity.y = (absoluteVal.y) * ((keyIsDown(UP_ARROW) && this.bounce) ? 1.1 : .5);
-      if(keyIsDown(UP_ARROW) && this.bounce){
-        this.playBounceEffect(60, 20, relativeVal.y, {x: nextBallPosition.x, y: wall.bottomPosition.y + wall.height}, {x: 0.5, y: -0.3})
-      }
-      nextBallPosition.y += this.ballVelocity.y;
-      this.ballVelocity.x = wallVelocity.x + (relativeVal.x * .5);
-      nextBallPosition.x += this.ballVelocity.x;
-      this.bounce = false;
-    }else{
-      nextBallPosition.y = this.ballPosition.y;
-      nextBallPosition.x += this.ballVelocity.x;
-    }
-    this.wallBounce = true;
   }
 
   doMovement(game, floors, walls){
@@ -1124,15 +1089,25 @@ class ball{
     nextBallPosition.y = this.moveVertically(nextBallPosition.y);
 
     if(this.onFloor){
-      let floorVelocity = {x: this.onFloor.startPosition.x - this.onFloor.prevPosition.x, y: this.onFloor.startPosition.y - this.onFloor.prevPosition.y};
-      nextBallPosition.x += floorVelocity.x;
-      nextBallPosition.y += floorVelocity.y;
-
-      if(!this.onFloor.checkIfBallHitFloor(this, nextBallPosition)){
-        this.ballVelocity.x += floorVelocity.x;
-        this.ballVelocity.y += floorVelocity.y;
-        this.onFloor.ball = false;
+      this.readyToJumpInc++;
+      if(keyIsDown(UP_ARROW) && this.readyToJumpInc > 20){
+        this.ballVelocity.y = .025;
+        this.playBounceEffect(60, 20, .03, {x: nextBallPosition.x, y: this.onFloor.startPosition.y}, {x: 0.5, y: -0.3})
+        nextBallPosition.y += this.ballVelocity.y;
+        this.readyToJumpInc = 0;
         this.onFloor = false;
+        this.bounce = false;
+      }else{
+        let floorVelocity = {x: this.onFloor.startPosition.x - this.onFloor.prevPosition.x, y: this.onFloor.startPosition.y - this.onFloor.prevPosition.y};
+        nextBallPosition.x += floorVelocity.x;
+        nextBallPosition.y += floorVelocity.y;
+
+        if(!this.onFloor.checkIfBallHitFloor(this, nextBallPosition)){
+          this.ballVelocity.x += floorVelocity.x;
+          this.ballVelocity.y += floorVelocity.y;
+          this.onFloor.ball = false;
+          this.onFloor = false;
+        }
       }
     }
 
