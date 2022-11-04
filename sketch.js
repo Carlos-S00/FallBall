@@ -414,7 +414,14 @@ class gameSystem{
     let begHole = random(1 - holesize);
     let begWall = begHole;
     for(let floorNum = 0; floorNum < numOfFloors; floorNum++){
-      let addWallMov = (Math.floor(Math.random() * 2))
+      let addWallMov = gameScore < 50 ? (Math.floor(Math.random() * 2)) : (Math.floor(Math.random() * 3));
+      if(gameScore < 50){
+        addWallMov = (Math.floor(Math.random() * 2))
+      }else if(gameScore < 75){
+        addWallMov = (Math.floor(Math.random() * 3))
+      }else{
+        addWallMov = (Math.floor(Math.random() * 4))
+      }
       while(((begHole >= this.prevHole && begHole <= this.prevHole + holesize) ||
             (begHole + holesize >= this.prevHole && begHole + holesize <= this.prevHole + holesize))){
         begHole = random(1 - holesize);
@@ -442,16 +449,17 @@ class gameSystem{
       let bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
       let height = wallHeight;
       let wallVelocity = {x: 0.005, y: 0};
-      
+      let dir = 0;
+
       if(!addWallMov){
         moveVars = false;
         insideMoveFun = function(){}
         walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
       }else{
         let velocityDir = (Math.floor(Math.random() * 2));
-        //wallVelocity = {x: 0.005, y: -.001};
         if(!velocityDir){
           wallVelocity.x *= -1;
+          dir = 1;
         }
         let beginNEndPositionX = {begin: 0, end: 1};
         let beginNEndPosition = {begin: 0, end: heightOfGameScreen};
@@ -477,19 +485,67 @@ class gameSystem{
         }
         walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
         
-        begWall = random()
-        while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 || begWall < .003 || begWall > .997 ||
-        (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || begWall + holesize > 1){
-          begWall = random()
-        }
-
-        bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
         //bottomPosition = {x: .997, y: floorLevel + (floorNum * mazeGap)}; //FOR TESTING PURPOSES .003 .997
         height = wallHeight;
-        moveVars = false;
-        insideMoveFun = function(){}
-        walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
-      }      
+        if(addWallMov == 1){
+          begWall = random()
+          while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 || begWall < .003 || begWall > .997 ||
+          (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || begWall + holesize > 1){
+            begWall = random()
+          }
+          bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
+          moveVars = false;
+          insideMoveFun = function(){}
+          walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+        }else{
+          if(begWall + .5 > 1){
+            begWall = (begWall + .5) - 1;
+          }else{
+            begWall += .5;
+          }
+          bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
+          let wallVelocity = {x: 0.005, y: 0};
+          if(!dir){
+            wallVelocity.x *= -1;
+          }
+          let beginNEndPositionX = {begin: 0, end: 1};
+          let beginNEndPosition = {begin: 0, end: heightOfGameScreen};
+          moveVars = {wallVelocity: wallVelocity, beginNEndPositionX: beginNEndPositionX, beginNEndPosition: beginNEndPosition};
+          insideMoveFun = function(){
+            this.moveVertically();
+    
+            this.moveHorizontally();
+            
+            if(this.bottomPosition.y <= this.moveVars.beginNEndPosition.begin || this.bottomPosition.y >= this.moveVars.beginNEndPosition.end){
+              this.moveVars.wallVelocity.y *= -1;
+            }
+    
+            if(this.moveVars.wallVelocity.x > 0){
+              if(this.bottomPosition.x > this.moveVars.beginNEndPositionX.end){
+                this.moveVars.wallVelocity.x *= -1;
+              }
+            }else if(this.moveVars.wallVelocity.x < 0){
+              if(this.bottomPosition.x < this.moveVars.beginNEndPositionX.begin){
+                this.moveVars.wallVelocity.x *= -1;
+              }
+            }
+          }
+          walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+          if(addWallMov == 3){
+            height = wallHeight;
+            begWall = random()
+            while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 || begWall < .003 || begWall > .997 ||
+            (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || begWall + holesize > 1){
+              begWall = random()
+            }  
+            bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
+            moveVars = false;
+            insideMoveFun = function(){}
+            walls.push(new wall(bottomPosition, height, moveVars, insideMoveFun));
+          }
+        }
+      }
+      //*/
     }
   }
   
@@ -781,7 +837,7 @@ class floor{
   checkIfBallHitFloor(ball, nextBallPosition){
     if(nextBallPosition.x >= this.startPosition.x && nextBallPosition.x <= this.startPosition.x + this.length){
       if(ball.onFloor != this){
-        if(ball.ballPosition.y  + (ball.ballDiameter / 2) <= this.prevPosition.y && nextBallPosition.y + (ball.ballDiameter / 2) >= this.startPosition.y){
+        if(ball.ballPosition.y  + (ball.ballDiameter / 2) <= this.prevPosition.y && nextBallPosition.y + (ball.ballDiameter / 2) >= this.startPosition.y && this.startPosition.y - game.scrollPos > -.2){
           return true;
         }else{
           return false;
@@ -796,7 +852,7 @@ class floor{
 
   isSlowerFloor(ball, newFloor){
     if(ball.ballPosition.x >= newFloor.startPosition.x && ball.ballPosition.x <= newFloor.startPosition.x + newFloor.length && this != newFloor){
-      if(newFloor.prevPosition.y > this.prevPosition.y && newFloor.startPosition.y < this.startPosition.y){
+      if(newFloor.prevPosition.y >= this.prevPosition.y && newFloor.startPosition.y <= this.startPosition.y){
         return true;
       }else{
         return false;
@@ -1625,9 +1681,9 @@ draw = function(){
       textSize(32);
       stroke(255,255,0);
       text('Game Over', resolution.x / 2, (resolution.y / 3))
-      if(mouseX >= (resolution.x / 2) - (textWidth('Retry') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Retry') / 2) && mouseY >= (resolution.y / 1.5) - 32 && mouseY <= (resolution.y / 1.5)){
+      if((mouseX >= (resolution.x / 2) - (textWidth('Retry') / 2) && mouseX <= (resolution.x / 2) + (textWidth('Retry') / 2) && mouseY >= (resolution.y / 1.5) - 32 && mouseY <= (resolution.y / 1.5)) || keyIsDown(DOWN_ARROW)){
         fill(247, 82, 121)
-        if(mouseIsPressed){
+        if(mouseIsPressed || keyIsDown(DOWN_ARROW)){
           game.generateGame(gameBall);
           game.fall = false;
           popGame = false;
