@@ -422,10 +422,10 @@ class gameSystem{
       let addWallMov;
       let scoreVal = Math.min(gameScore / 100, 1);
       let randLvlProb = Math.random();
-      console.log("scoreVal: " + scoreVal)
-      console.log("randLvlProb: " + randLvlProb)
+      //console.log("scoreVal: " + scoreVal)
+      //console.log("randLvlProb: " + randLvlProb)
       randLvlProb = (randLvlProb + scoreVal) / 2;
-      console.log("randLvlProb: " + randLvlProb)
+      //console.log("randLvlProb: " + randLvlProb)
 
       if(randLvlProb >= 0 && randLvlProb < lvl0){
         addWallMov = 0;
@@ -436,7 +436,7 @@ class gameSystem{
       }else{
         addWallMov = 3;
       }
-      console.log("addWallMov:::::: " + addWallMov)
+      //console.log("addWallMov:::::: " + addWallMov)
 
       while(((begHole >= this.prevHole && begHole <= this.prevHole + holesize) ||
             (begHole + holesize >= this.prevHole && begHole + holesize <= this.prevHole + holesize))){
@@ -1640,32 +1640,66 @@ draw = function(){
         if(walls[wallIndex].WallInsideBall(gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
           if(gameBall.ballPosition.x > walls[wallIndex].bottomPosition.x){
             //console.log("added 1")
-            gameBall.totalBallRoll -= gameBall.ballPosition.x - (walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2));
-            gameBall.ballPosition.x =  walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2);
-            gameBall.wallHit.right = true;
-            wallsTouched.right++;
+            if((gameBall.wallHit.left && (gameBall.wallHit.left.bottomPosition.x - gameBall.wallHit.left.prevPosition.x) == 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) < 0) ||
+              (gameBall.wallHit.left && (gameBall.wallHit.left.bottomPosition.x - gameBall.wallHit.left.prevPosition.x) > 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) == 0) ||
+              (gameBall.wallHit.left && (gameBall.wallHit.left.bottomPosition.x - gameBall.wallHit.left.prevPosition.x) > 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) < 0)){
+                //console.log("INSIDE 1")
+                gameBall.ballVelocity.x = 0;
+                gameBall.ballVelocity.y = 0;
+            }else{
+              gameBall.totalBallRoll -= gameBall.ballPosition.x - (walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2));
+              gameBall.ballPosition.x =  walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2);
+              gameBall.wallHit.right = walls[wallIndex];
+              wallsTouched.right++;
+            }
           }else{
             //console.log("added 2")
-            gameBall.totalBallRoll -= gameBall.ballPosition.x - (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2));
-            gameBall.ballPosition.x =  walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2);
-            gameBall.wallHit.left = true;
-            wallsTouched.left++;
+            if((gameBall.wallHit.right && (gameBall.wallHit.right.bottomPosition.x - gameBall.wallHit.right.prevPosition.x) == 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) > 0) ||
+            (gameBall.wallHit.right && (gameBall.wallHit.right.bottomPosition.x - gameBall.wallHit.right.prevPosition.x) < 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) == 0) ||
+            (gameBall.wallHit.right && (gameBall.wallHit.right.bottomPosition.x - gameBall.wallHit.right.prevPosition.x) < 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) > 0)){
+              //console.log("INSIDE 2")
+              gameBall.ballVelocity.x = 0;
+              gameBall.ballVelocity.y = 0;
+            }else{
+              gameBall.totalBallRoll -= gameBall.ballPosition.x - (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2));
+              gameBall.ballPosition.x =  walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2);
+              gameBall.wallHit.left = walls[wallIndex];
+              wallsTouched.left++;
+            }
           }
         }else if(gameBall.ballPosition.x - (gameBall.ballDiameter / 2) < 0){
           //console.log("inside here 1")
           if(walls[wallIndex].WallInsideBall(1 + gameBall.ballPosition.x, gameBall.ballPosition.y, gameBall.ballDiameter)){
             //console.log("inside again 1")
-            gameBall.ballPosition.x =  (walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2)) - 1;
-            gameBall.wallHit.right = true;
-            wallsTouched.right++;
+            if((gameBall.wallHit.left && (gameBall.wallHit.left.bottomPosition.x - gameBall.wallHit.left.prevPosition.x) == 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) < 0) ||
+               (gameBall.wallHit.left && (gameBall.wallHit.left.bottomPosition.x - gameBall.wallHit.left.prevPosition.x) > 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) == 0) ||
+               (gameBall.wallHit.left && (gameBall.wallHit.left.bottomPosition.x - gameBall.wallHit.left.prevPosition.x) > 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) < 0)){
+              //console.log("INSIDE 11")
+              gameBall.ballVelocity.x = 0;
+              gameBall.ballVelocity.y = 0;
+            }else{
+              gameBall.totalBallRoll -= (gameBall.ballPosition.x + 1) - (walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2));
+              gameBall.ballPosition.x =  (walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2)) - 1;
+              gameBall.wallHit.right = walls[wallIndex];
+              wallsTouched.right++;
+            }
           }
         }else if(gameBall.ballPosition.x + (gameBall.ballDiameter / 2) > 1){
           //console.log("inside here 2")
           if(walls[wallIndex].WallInsideBall(gameBall.ballPosition.x - 1, gameBall.ballPosition.y, gameBall.ballDiameter)){
             //console.log("inside again 2")
-            gameBall.ballPosition.x =  (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2)) + 1;
-            gameBall.wallHit.left = true;
-            wallsTouched.left++;
+            if((gameBall.wallHit.right && (gameBall.wallHit.right.bottomPosition.x - gameBall.wallHit.right.prevPosition.x) == 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) > 0) ||
+               (gameBall.wallHit.right && (gameBall.wallHit.right.bottomPosition.x - gameBall.wallHit.right.prevPosition.x) < 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) == 0) ||
+               (gameBall.wallHit.right && (gameBall.wallHit.right.bottomPosition.x - gameBall.wallHit.right.prevPosition.x) < 0 && (walls[wallIndex].bottomPosition.x - walls[wallIndex].prevPosition.x) > 0)){
+              //console.log("INSIDE 22")
+              gameBall.ballVelocity.x = 0;
+              gameBall.ballVelocity.y = 0;
+            }else{
+              gameBall.totalBallRoll -= (gameBall.ballPosition.x - 1) - (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2));
+              gameBall.ballPosition.x =  (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2)) + 1;
+              gameBall.wallHit.left = walls[wallIndex];
+              wallsTouched.left++;
+            }
           }
         }
         //*/
@@ -1678,7 +1712,7 @@ draw = function(){
         }
       }else{
         if(!walls[wallIndex].finishedPop){
-          game.displayWall(walls[wallIndex]);  
+          game.displayWall(walls[wallIndex]);
         }
       }
     }
