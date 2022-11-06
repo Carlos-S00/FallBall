@@ -1244,7 +1244,8 @@ class ball{
           this.onFloor = false;
         }
       }
-    }else{
+    }
+    if(!this.onFloor){
       let hitFloors = [];
       for(let floorIndex = 0; floorIndex < floors.length; floorIndex++){
         if(floors[floorIndex].checkIfBallHitFloor(this, nextBallPosition)){
