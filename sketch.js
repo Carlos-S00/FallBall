@@ -286,11 +286,6 @@ class gameSystem{
           noFill();
           if(ball.bounce){
             ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
-            if(ball.justGotBounce > 1){
-              ball.justGotBounce /= 1.17;
-            } else {
-              ball.justGotBounce = 0;
-            }
           }
           image(ballImage, -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
           resetMatrix();
@@ -302,11 +297,6 @@ class gameSystem{
           noFill();
           if(ball.bounce){
             ellipse(0, 0, ballDiameter+1 + ball.justGotBounce, ballDiameter+1 + ball.justGotBounce);
-            if(ball.justGotBounce > 1){
-              ball.justGotBounce /= 1.17;
-            } else {
-              ball.justGotBounce = 0;
-            }
           }
           image(ballImage,  -(ballDiameter / 2) , -(ballDiameter / 2), ballDiameter, ballDiameter);
           resetMatrix();
@@ -458,8 +448,7 @@ class gameSystem{
       floors.push(new floor(startPosition, floorLength, moveVars, insideMoveFun));
 
       if(addWallMov == 0 || addWallMov == 1 || addWallMov == 3){
-        while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 || begWall < .003 || begWall > .997 ||
-              (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || begWall + holesize > 1){
+        while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 || begWall < .003 || begWall > .997){
           begWall = random()
         }
         let bottomPosition = {x: begWall, y: floorLevel + (floorNum * mazeGap)};
@@ -480,8 +469,7 @@ class gameSystem{
           wallVelocity.x *= -1;
           dir = 0;
         }
-        while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 || begWall < .003 || begWall > .997 ||
-              (begWall + holesize >= begHole && begWall + holesize <= begHole + holesize) || begWall + holesize > 1){
+        while((begWall >= begHole && begWall <= begHole + holesize) || begWall == .05 || begWall < .003 || begWall > .997){
           begWall = random()
         }
         while(addWallMov > 0){
@@ -1662,6 +1650,7 @@ draw = function(){
               gameBall.ballVelocity.x = 0;
               gameBall.ballVelocity.y = 0;
             }else{
+              //console.log("HERE??")
               gameBall.totalBallRoll -= gameBall.ballPosition.x - (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2));
               gameBall.ballPosition.x =  walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2);
               gameBall.wallHit.left = walls[wallIndex];
@@ -1679,6 +1668,7 @@ draw = function(){
               gameBall.ballVelocity.x = 0;
               gameBall.ballVelocity.y = 0;
             }else{
+              //console.log("in here1")
               gameBall.totalBallRoll -= (gameBall.ballPosition.x + 1) - (walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2));
               gameBall.ballPosition.x =  (walls[wallIndex].bottomPosition.x + (gameBall.ballDiameter / 2)) - 1;
               gameBall.wallHit.right = walls[wallIndex];
@@ -1696,6 +1686,7 @@ draw = function(){
               gameBall.ballVelocity.x = 0;
               gameBall.ballVelocity.y = 0;
             }else{
+              //console.log("in here2")
               gameBall.totalBallRoll -= (gameBall.ballPosition.x - 1) - (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2));
               gameBall.ballPosition.x =  (walls[wallIndex].bottomPosition.x - (gameBall.ballDiameter / 2)) + 1;
               gameBall.wallHit.left = walls[wallIndex];
